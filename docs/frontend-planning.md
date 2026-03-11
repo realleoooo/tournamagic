@@ -1,14 +1,14 @@
 # Frontend Planning: Magic: The Gathering Draft Tournament App
 
 ## 1) Scope of this phase
-This document covers **planning for the frontend only** (Vue + Vite).  
-Backend (Spring Boot), persistence, and Docker delivery are noted as future implementation phases.
+This document covers **planning for the frontend only** (Vue + Vite) and Docker setup.  
+Backend (Spring Boot) and persistence are noted as future implementation phases.
 
 ---
 
 ## 2) Product vision
 Create a stylish “gamer” web app for friend-group MTG draft tournaments where:
-- Players are added at tournament start (typical group size: 6).
+- Players are added at tournament start.
 - Every player plays every other player (round-robin pairing).
 - Each matchup is best-of-three (Bo3), always producing one winner.
 - Users can quickly record match results.
@@ -27,8 +27,6 @@ Tone and UX should feel themed for MTG players: dark fantasy look, glowing accen
 3. No draws allowed in matches.
 4. Frontend-first phase stores state locally (in-memory + optional LocalStorage).
 5. Initial optimization target: smooth experience for 4–12 players.
-
-> Note: If “everyone plays three times against each other” is intended literally (triple round-robin), we can support it by changing the pairing generator from 1 leg to 3 legs in a later increment.
 
 ---
 
@@ -212,95 +210,18 @@ This planning phase is complete when:
 
 ---
 
-## 10) Phase-by-phase implementation plan (until fully done)
-
-This roadmap is ordered so each phase produces a usable increment and the **final phase completes the full app scope** (frontend + backend + Dockerized run flow).
-
-### Phase 1 — Frontend foundation and project bootstrap
-**Goal:** Establish technical baseline and visual foundation.
-
-**Deliverables**
-1. Initialize Vue 3 + Vite + TypeScript project.
-2. Set up linting/formatting, base routing, and Pinia store skeleton.
-3. Add global MTG-inspired design tokens (colors, spacing, typography).
-4. Create reusable shell components (page container, card panel, button variants).
-
-**Definition of done**
-- App starts locally and renders themed base layout.
-- Code style and build checks pass.
-
-### Phase 2 — Core tournament domain logic (frontend)
-**Goal:** Implement deterministic tournament behavior as pure logic.
-
-**Deliverables**
-1. Domain models (`Player`, `Match`, `Tournament`, standings rows).
-2. Round-robin pairing generator.
-3. Bo3 validation and winner computation.
-4. Leaderboard/ranking engine with tie-break rules.
-5. Unit tests for pairing, validation, and ranking.
-
-**Definition of done**
-- Logic is tested and independent from UI components.
-- Ranking updates are deterministic for create/edit result flows.
-
-### Phase 3 — Tournament UX flows (frontend)
-**Goal:** Deliver complete single-device tournament operation.
-
-**Deliverables**
-1. Setup screen (create tournament, add/edit/remove players, validation).
-2. Tournament dashboard (schedule, leaderboard, progress, remaining opponents).
-3. Match result modal/drawer with edit/undo support.
-4. Player/status filtering and quick “next match” suggestions.
-5. Local persistence with LocalStorage restore/reset.
-
-**Definition of done**
-- A user can run a full tournament in browser from setup to final ranking.
-- Refresh does not lose state for normal browser sessions.
-
-### Phase 4 — Backend integration (Spring Boot)
-**Goal:** Move from local-only state to persistent multi-session data.
-
-**Deliverables**
-1. Spring Boot backend project with REST API contracts.
-2. Endpoints for tournaments, players, matches, and standings.
-3. Persistence layer (database-backed) with schema and migrations.
-4. Frontend API client and state sync (replace/augment LocalStorage path).
-5. Error states and loading UX for networked operations.
-
-**Definition of done**
-- Tournament data persists across devices/sessions through backend.
-- Frontend reads/writes tournament state via API successfully.
-
-### Phase 5 — Dockerized full-stack delivery
-**Goal:** Run the application without requiring local Node/npm or Java setup.
-
-**Deliverables**
-1. Dockerfiles for frontend and backend (or unified multi-stage image strategy).
-2. `docker-compose` for one-command local startup.
-3. Environment configuration for API URL, ports, and persistence service.
-4. Updated README with exact run instructions.
-
-**Definition of done**
-- `docker compose up` starts complete app stack.
-- A new user can run and use the app without manually installing toolchains.
-
-### Phase 6 — Hardening, QA, and release readiness
-**Goal:** Finalize quality so “everything is done” for v1 scope.
-
-**Deliverables**
-1. End-to-end happy-path tests (setup → matches → final leaderboard).
-2. Accessibility and responsive QA pass.
-3. Performance pass for target player counts.
-4. UX polish pass (animations, feedback, visual consistency).
-5. Release checklist and v1 tag.
-
-**Definition of done**
-- Functional and non-functional requirements from this plan are satisfied.
-- App is stable, themed, and shippable as a complete v1.
+## 10) Next implementation milestones (frontend only)
+1. Bootstrap Vue + Vite + TypeScript project.
+2. Implement domain logic (pairings, Bo3 validation, ranking).
+3. Build setup screen + tournament dashboard shell.
+4. Implement result-entry flow + live leaderboard.
+5. Add local persistence.
+6. Add unit tests for pairing/ranking.
+7. Apply final visual polish/theme pass.
 
 ---
 
-## 11) Post-v1 optional extensions
-- Authentication and shared/private tournaments.
-- Multi-tournament history and statistics.
-- Advanced tie-break systems and alternative tournament formats.
+## 11) Future phases (out of current scope)
+- Spring Boot backend (REST API, persistent storage, multi-device sync).
+- Dockerized full stack (frontend + backend + optional DB).
+- Authentication and shared tournaments.
