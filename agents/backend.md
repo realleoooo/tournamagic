@@ -5,10 +5,9 @@ Responsibilities:
 - Implement APIs
 - Implement business logic
 - Create database schemas
-- Write tests
+- Expert in spring boot
 
 Rules:
 
 - Follow clean architecture
 - Use modular code
-- Always add tests

@@ -6,6 +6,7 @@ Responsibilities:
 - Connect APIs
 - Ensure responsive design
 - Optimize UX
+- Expert in Vue.js and vite
 
 Rules:
 
