@@ -1,14 +1,14 @@
 # Frontend Planning: Magic: The Gathering Draft Tournament App
 
 ## 1) Scope of this phase
-This document covers **planning for the frontend only** (Vue + Vite).  
-Backend (Spring Boot), persistence, and Docker delivery are noted as future implementation phases.
+This document covers **planning for the frontend only** (Vue + Vite) and Docker setup.  
+Backend (Spring Boot) and persistence are noted as future implementation phases.
 
 ---
 
 ## 2) Product vision
 Create a stylish “gamer” web app for friend-group MTG draft tournaments where:
-- Players are added at tournament start (typical group size: 6).
+- Players are added at tournament start.
 - Every player plays every other player (round-robin pairing).
 - Each matchup is best-of-three (Bo3), always producing one winner.
 - Users can quickly record match results.
@@ -27,8 +27,6 @@ Tone and UX should feel themed for MTG players: dark fantasy look, glowing accen
 3. No draws allowed in matches.
 4. Frontend-first phase stores state locally (in-memory + optional LocalStorage).
 5. Initial optimization target: smooth experience for 4–12 players.
-
-> Note: If “everyone plays three times against each other” is intended literally (triple round-robin), we can support it by changing the pairing generator from 1 leg to 3 legs in a later increment.
 
 ---
 
