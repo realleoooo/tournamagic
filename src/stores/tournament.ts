@@ -2,10 +2,11 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { buildStandings } from '@/domain/ranking'
 import type { Tournament } from '@/domain/models'
-import { tournamentApi } from '@/api/tournamentApi'
+import { tournamentApi, type TournamentSummary } from '@/api/tournamentApi'
 
 export const useTournamentStore = defineStore('tournament', () => {
   const tournament = ref<Tournament | undefined>(undefined)
+  const tournaments = ref<TournamentSummary[]>([])
   const loading = ref(false)
   const error = ref<string | undefined>(undefined)
 
@@ -33,20 +34,42 @@ export const useTournamentStore = defineStore('tournament', () => {
     }
   }
 
+  const refreshTournamentList = async () => {
+    const list = await withLoading(() => tournamentApi.listTournaments())
+    if (list) {
+      tournaments.value = list
+    }
+  }
+
   const bootstrap = async () => {
+    await refreshTournamentList()
     const savedId = tournamentApi.getStoredTournamentId()
     if (!savedId) return
 
     const fetched = await withLoading(() => tournamentApi.fetchTournament(savedId))
     if (fetched) {
       tournament.value = fetched
+      return
     }
+
+    tournamentApi.setStoredTournamentId(undefined)
+    tournament.value = undefined
+  }
+
+  const openTournament = async (id: string) => {
+    const fetched = await withLoading(() => tournamentApi.fetchTournament(id))
+    if (fetched) {
+      tournament.value = fetched
+      tournamentApi.setStoredTournamentId(id)
+    }
+    return fetched
   }
 
   const createTournament = async (name: string, playerNames: string[]) => {
     const created = await withLoading(() => tournamentApi.createTournament({ name, players: playerNames }))
     if (created) {
       tournament.value = created
+      await refreshTournamentList()
     }
     return created
   }
@@ -58,6 +81,7 @@ export const useTournamentStore = defineStore('tournament', () => {
     )
     if (updated) {
       tournament.value = updated
+      await refreshTournamentList()
     }
   }
 
@@ -66,13 +90,28 @@ export const useTournamentStore = defineStore('tournament', () => {
     const updated = await withLoading(() => tournamentApi.clearResult(tournament.value!.id, matchId))
     if (updated) {
       tournament.value = updated
+      await refreshTournamentList()
     }
+  }
+
+  const leaveTournament = () => {
+    tournament.value = undefined
   }
 
   const resetTournament = async () => {
     if (!tournament.value) return
-    await withLoading(() => tournamentApi.deleteTournament(tournament.value!.id))
+    const id = tournament.value.id
+    await withLoading(() => tournamentApi.deleteTournament(id))
     tournament.value = undefined
+    await refreshTournamentList()
+  }
+
+  const deleteFromList = async (id: string) => {
+    await withLoading(() => tournamentApi.deleteTournament(id))
+    if (tournament.value?.id === id) {
+      tournament.value = undefined
+    }
+    await refreshTournamentList()
   }
 
   const resolveName = (playerId: string) =>
@@ -89,15 +128,20 @@ export const useTournamentStore = defineStore('tournament', () => {
 
   return {
     tournament,
+    tournaments,
     loading,
     error,
     standings,
     completion,
     bootstrap,
+    refreshTournamentList,
+    openTournament,
     createTournament,
     submitResult,
     clearResult,
+    leaveTournament,
     resetTournament,
+    deleteFromList,
     resolveName,
     remainingOpponents
   }

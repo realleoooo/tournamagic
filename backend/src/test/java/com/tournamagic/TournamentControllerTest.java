@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -32,5 +33,11 @@ class TournamentControllerTest {
                 .andExpect(jsonPath("$.players.length()").value(3))
                 .andExpect(jsonPath("$.matches.length()").value(3))
                 .andExpect(jsonPath("$.status").value("active"));
+    }
+
+    @Test
+    void listsTournamentOverview() throws Exception {
+        mockMvc.perform(get("/api/tournaments"))
+                .andExpect(status().isOk());
     }
 }

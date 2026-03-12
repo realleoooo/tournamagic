@@ -3,6 +3,16 @@ import type { Tournament } from '@/domain/models'
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 const ID_KEY = 'tournamagic.tournamentId'
 
+export type TournamentSummary = {
+  id: string
+  name: string
+  status: string
+  createdAt: string
+  playerCount: number
+  completedMatches: number
+  totalMatches: number
+}
+
 type CreateTournamentPayload = { name: string; players: string[] }
 type MatchPayload = { winsA: number; winsB: number }
 
@@ -38,6 +48,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const tournamentApi = {
   getStoredTournamentId: readId,
+  setStoredTournamentId: writeId,
+  async listTournaments(): Promise<TournamentSummary[]> {
+    return request<TournamentSummary[]>('/tournaments')
+  },
   async createTournament(payload: CreateTournamentPayload): Promise<Tournament> {
     const tournament = await request<Tournament>('/tournaments', {
       method: 'POST',
@@ -62,6 +76,9 @@ export const tournamentApi = {
   },
   async deleteTournament(tournamentId: string): Promise<void> {
     await request<void>(`/tournaments/${tournamentId}`, { method: 'DELETE' })
-    writeId(undefined)
+    const current = readId()
+    if (current === tournamentId) {
+      writeId(undefined)
+    }
   }
 }

@@ -17,6 +17,11 @@ public class TournamentController {
         this.tournamentService = tournamentService;
     }
 
+    @GetMapping
+    public List<TournamentSummaryDto> listTournaments() {
+        return tournamentService.listTournaments();
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public TournamentDto createTournament(@Valid @RequestBody CreateTournamentRequest request) {

@@ -54,6 +54,24 @@ public class TournamentService {
         return toDto(tournament, players, matches);
     }
 
+    public List<TournamentSummaryDto> listTournaments() {
+        List<TournamentEntity> tournaments = tournamentRepository.findAll();
+        return tournaments.stream().map(tournament -> {
+            List<PlayerEntity> players = playerRepository.findByTournamentId(tournament.getId());
+            List<MatchEntity> matches = matchRepository.findByTournamentId(tournament.getId());
+            int completed = (int) matches.stream().filter(m -> "completed".equals(m.getStatus())).count();
+            return new TournamentSummaryDto(
+                    tournament.getId(),
+                    tournament.getName(),
+                    tournament.getStatus(),
+                    tournament.getCreatedAt(),
+                    players.size(),
+                    completed,
+                    matches.size()
+            );
+        }).sorted((a, b) -> b.createdAt().compareTo(a.createdAt())).toList();
+    }
+
     public TournamentDto getTournament(String id) {
         TournamentEntity tournament = tournamentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));

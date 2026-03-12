@@ -17,13 +17,18 @@ onMounted(async () => {
   }
 
   if (!store.tournament) {
-    router.push('/')
+    router.replace('/')
   }
 })
 
+const goOverview = () => {
+  store.leaveTournament()
+  router.replace('/')
+}
+
 const onReset = async () => {
   await store.resetTournament()
-  router.push('/')
+  router.replace('/')
 }
 </script>
 
@@ -40,7 +45,10 @@ const onReset = async () => {
         <section class="card">
           <h2>{{ tournament.name }}</h2>
           <p>{{ tournament.players.length }} players</p>
-          <button class="warn" type="button" @click="onReset">Reset Tournament</button>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button type="button" class="secondary" @click="goOverview">Back to overview</button>
+            <button class="warn" type="button" @click="onReset">Reset Tournament</button>
+          </div>
         </section>
         <ProgressPanel :completed="store.completion.completed" :total="store.completion.total" />
         <MatchList
