@@ -28,8 +28,6 @@ Tone and UX should feel themed for MTG players: dark fantasy look, glowing accen
 4. Frontend-first phase stores state locally (in-memory + optional LocalStorage).
 5. Initial optimization target: smooth experience for 4–12 players.
 
-> Note: If “everyone plays three times against each other” is intended literally (triple round-robin), we can support it by changing the pairing generator from 1 leg to 3 legs in a later increment.
-
 ---
 
 ## 4) Functional requirements (frontend)
