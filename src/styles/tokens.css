@@ -1,0 +1,12 @@
+:root {
+  --bg-main: #0f1117;
+  --bg-surface: #171a24;
+  --bg-elevated: #1f2433;
+  --text-main: #f4f6ff;
+  --text-soft: #a2abc8;
+  --accent-arcane: #7c3aed;
+  --accent-gold: #d4af37;
+  --ok: #22c55e;
+  --danger: #ef4444;
+  --radius: 14px;
+}

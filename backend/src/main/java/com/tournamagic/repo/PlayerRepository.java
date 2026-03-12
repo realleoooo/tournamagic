@@ -1,0 +1,11 @@
+package com.tournamagic.repo;
+
+import com.tournamagic.domain.PlayerEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface PlayerRepository extends JpaRepository<PlayerEntity, String> {
+    List<PlayerEntity> findByTournamentId(String tournamentId);
+    void deleteByTournamentId(String tournamentId);
+}
