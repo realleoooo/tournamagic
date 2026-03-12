@@ -17,18 +17,18 @@ onMounted(async () => {
   }
 
   if (!store.tournament) {
-    router.push('/')
+    router.replace('/')
   }
 })
 
 const goOverview = () => {
   store.leaveTournament()
-  router.push('/')
+  router.replace('/')
 }
 
 const onReset = async () => {
   await store.resetTournament()
-  router.push('/')
+  router.replace('/')
 }
 </script>
 

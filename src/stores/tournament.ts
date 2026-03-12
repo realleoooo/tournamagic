@@ -49,7 +49,11 @@ export const useTournamentStore = defineStore('tournament', () => {
     const fetched = await withLoading(() => tournamentApi.fetchTournament(savedId))
     if (fetched) {
       tournament.value = fetched
+      return
     }
+
+    tournamentApi.setStoredTournamentId(undefined)
+    tournament.value = undefined
   }
 
   const openTournament = async (id: string) => {
