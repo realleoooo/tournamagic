@@ -1,23 +1,18 @@
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
-import { createRoundRobinMatches } from '@/domain/pairing'
+import { computed, ref } from 'vue'
 import { buildStandings } from '@/domain/ranking'
-import { parseBestOfThree } from '@/domain/scoring'
-import type { Match, Player, Tournament } from '@/domain/models'
-import { loadTournament, saveTournament } from '@/composables/useLocalStorageSync'
-
-const uid = () => Math.random().toString(36).slice(2, 10)
+import type { Tournament } from '@/domain/models'
+import { tournamentApi } from '@/api/tournamentApi'
 
 export const useTournamentStore = defineStore('tournament', () => {
-  const tournament = ref<Tournament | undefined>(loadTournament())
+  const tournament = ref<Tournament | undefined>(undefined)
+  const loading = ref(false)
+  const error = ref<string | undefined>(undefined)
 
-  const isSetup = computed(() => !tournament.value || tournament.value.status === 'setup')
   const standings = computed(() =>
     tournament.value ? buildStandings(tournament.value.players, tournament.value.matches) : []
   )
-  const pendingMatches = computed(() =>
-    tournament.value ? tournament.value.matches.filter((m) => m.status === 'pending') : []
-  )
+
   const completion = computed(() => {
     if (!tournament.value) return { completed: 0, total: 0 }
     const total = tournament.value.matches.length
@@ -25,56 +20,58 @@ export const useTournamentStore = defineStore('tournament', () => {
     return { completed, total }
   })
 
-  watch(
-    tournament,
-    (value) => saveTournament(value),
-    { deep: true }
-  )
-
-  const createTournament = (name: string, playerNames: string[]) => {
-    const players: Player[] = playerNames.map((playerName) => ({ id: uid(), name: playerName.trim() }))
-    const matches = createRoundRobinMatches(players)
-
-    tournament.value = {
-      id: uid(),
-      name,
-      createdAt: new Date().toISOString(),
-      players,
-      matches,
-      status: 'active'
+  const withLoading = async <T>(fn: () => Promise<T>): Promise<T | undefined> => {
+    loading.value = true
+    error.value = undefined
+    try {
+      return await fn()
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Unknown error'
+      return undefined
+    } finally {
+      loading.value = false
     }
   }
 
-  const submitResult = (matchId: string, winsA: number, winsB: number) => {
-    if (!tournament.value) return
+  const bootstrap = async () => {
+    const savedId = tournamentApi.getStoredTournamentId()
+    if (!savedId) return
 
-    const parsed = parseBestOfThree(winsA, winsB)
-    const match = tournament.value.matches.find((item) => item.id === matchId)
-    if (!match) return
-
-    match.winsA = parsed.winsA
-    match.winsB = parsed.winsB
-    match.status = 'completed'
-    match.winnerId = parsed.winnerSide === 'A' ? match.playerAId : match.playerBId
-
-    if (tournament.value.matches.every((item) => item.status === 'completed')) {
-      tournament.value.status = 'complete'
+    const fetched = await withLoading(() => tournamentApi.fetchTournament(savedId))
+    if (fetched) {
+      tournament.value = fetched
     }
   }
 
-  const clearResult = (matchId: string) => {
-    if (!tournament.value) return
-    const match = tournament.value.matches.find((item) => item.id === matchId)
-    if (!match) return
-
-    match.status = 'pending'
-    match.winsA = 0
-    match.winsB = 0
-    match.winnerId = undefined
-    tournament.value.status = 'active'
+  const createTournament = async (name: string, playerNames: string[]) => {
+    const created = await withLoading(() => tournamentApi.createTournament({ name, players: playerNames }))
+    if (created) {
+      tournament.value = created
+    }
+    return created
   }
 
-  const resetTournament = () => {
+  const submitResult = async (matchId: string, winsA: number, winsB: number) => {
+    if (!tournament.value) return
+    const updated = await withLoading(() =>
+      tournamentApi.submitResult(tournament.value!.id, matchId, { winsA, winsB })
+    )
+    if (updated) {
+      tournament.value = updated
+    }
+  }
+
+  const clearResult = async (matchId: string) => {
+    if (!tournament.value) return
+    const updated = await withLoading(() => tournamentApi.clearResult(tournament.value!.id, matchId))
+    if (updated) {
+      tournament.value = updated
+    }
+  }
+
+  const resetTournament = async () => {
+    if (!tournament.value) return
+    await withLoading(() => tournamentApi.deleteTournament(tournament.value!.id))
     tournament.value = undefined
   }
 
@@ -83,22 +80,20 @@ export const useTournamentStore = defineStore('tournament', () => {
 
   const remainingOpponents = (playerId: string): string[] => {
     if (!tournament.value) return []
-    const pending = tournament.value.matches.filter(
-      (match) =>
+    return tournament.value.matches
+      .filter((match) =>
         match.status === 'pending' && (match.playerAId === playerId || match.playerBId === playerId)
-    )
-
-    return pending.map((match) =>
-      resolveName(match.playerAId === playerId ? match.playerBId : match.playerAId)
-    )
+      )
+      .map((match) => resolveName(match.playerAId === playerId ? match.playerBId : match.playerAId))
   }
 
   return {
     tournament,
-    isSetup,
+    loading,
+    error,
     standings,
-    pendingMatches,
     completion,
+    bootstrap,
     createTournament,
     submitResult,
     clearResult,

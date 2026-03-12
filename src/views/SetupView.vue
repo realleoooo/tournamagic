@@ -6,12 +6,19 @@ import { useTournamentStore } from '@/stores/tournament'
 const router = useRouter()
 const store = useTournamentStore()
 
-const handleCreate = (name: string, players: string[]) => {
-  store.createTournament(name, players)
-  router.push('/tournament')
+const handleCreate = async (name: string, players: string[]) => {
+  const created = await store.createTournament(name, players)
+  if (created) {
+    router.push('/tournament')
+  }
 }
 </script>
 
 <template>
-  <PlayerRosterForm @create="handleCreate" />
+  <div class="grid">
+    <section v-if="store.error" class="card" style="border-color: var(--danger)">
+      <strong>Could not create tournament:</strong> {{ store.error }}
+    </section>
+    <PlayerRosterForm @create="handleCreate" />
+  </div>
 </template>
