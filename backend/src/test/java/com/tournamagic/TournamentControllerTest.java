@@ -32,7 +32,8 @@ class TournamentControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.players.length()").value(3))
                 .andExpect(jsonPath("$.matches.length()").value(3))
-                .andExpect(jsonPath("$.status").value("active"));
+                .andExpect(jsonPath("$.status").value("active"))
+                .andExpect(jsonPath("$.matches[0].roundNumber").isNumber());
     }
 
     @Test

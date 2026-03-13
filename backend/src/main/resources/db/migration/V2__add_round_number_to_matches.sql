@@ -1,0 +1,2 @@
+ALTER TABLE matches
+    ADD COLUMN round_number INT NOT NULL DEFAULT 1;

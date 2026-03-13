@@ -11,6 +11,7 @@ export const createRoundRobinMatches = (players: Player[]): Match[] => {
         id: `${a.id}-${b.id}`,
         playerAId: a.id,
         playerBId: b.id,
+        roundNumber: 1,
         status: 'pending',
         winsA: 0,
         winsB: 0

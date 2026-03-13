@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import MatchList from '@/components/matches/MatchList.vue'
 import LeaderboardTable from '@/components/leaderboard/LeaderboardTable.vue'
@@ -10,6 +10,32 @@ const store = useTournamentStore()
 const router = useRouter()
 
 const tournament = computed(() => store.tournament)
+const selectedRound = ref<number | undefined>(undefined)
+
+const roundNumbers = computed(() => {
+  if (!tournament.value) return []
+  return [...new Set(tournament.value.matches.map((match) => match.roundNumber))].sort((a, b) => a - b)
+})
+
+const selectedRoundMatches = computed(() => {
+  if (!tournament.value) return []
+  if (!selectedRound.value) return tournament.value.matches
+  return tournament.value.matches.filter((match) => match.roundNumber === selectedRound.value)
+})
+
+watch(
+  roundNumbers,
+  (rounds) => {
+    if (rounds.length === 0) {
+      selectedRound.value = undefined
+      return
+    }
+    if (!selectedRound.value || !rounds.includes(selectedRound.value)) {
+      selectedRound.value = rounds[0]
+    }
+  },
+  { immediate: true }
+)
 
 onMounted(async () => {
   if (!tournament.value) {
@@ -50,9 +76,26 @@ const onReset = async () => {
             <button class="warn" type="button" @click="onReset">Reset Tournament</button>
           </div>
         </section>
+
+        <section class="card">
+          <h2>Rounds</h2>
+          <p style="color:var(--text-soft)">Select a round to see who plays each other.</p>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button
+              v-for="round in roundNumbers"
+              :key="round"
+              type="button"
+              :class="selectedRound === round ? '' : 'secondary'"
+              @click="selectedRound = round"
+            >
+              Round {{ round }}
+            </button>
+          </div>
+        </section>
+
         <ProgressPanel :completed="store.completion.completed" :total="store.completion.total" />
         <MatchList
-          :matches="tournament.matches"
+          :matches="selectedRoundMatches"
           :resolve-name="store.resolveName"
           @submit="store.submitResult"
           @clear="store.clearResult"

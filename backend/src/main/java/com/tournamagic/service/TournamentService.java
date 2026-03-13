@@ -172,19 +172,41 @@ public class TournamentService {
 
     private List<MatchEntity> createRoundRobinMatches(String tournamentId, List<PlayerEntity> players) {
         List<MatchEntity> matches = new ArrayList<>();
-        for (int i = 0; i < players.size(); i++) {
-            for (int j = i + 1; j < players.size(); j++) {
+
+        List<PlayerEntity> rotation = new ArrayList<>(players);
+        if (rotation.size() % 2 != 0) {
+            rotation.add(null);
+        }
+
+        int playerSlots = rotation.size();
+        int rounds = playerSlots - 1;
+        int matchesPerRound = playerSlots / 2;
+
+        for (int round = 1; round <= rounds; round++) {
+            for (int i = 0; i < matchesPerRound; i++) {
+                PlayerEntity a = rotation.get(i);
+                PlayerEntity b = rotation.get(playerSlots - 1 - i);
+
+                if (a == null || b == null) {
+                    continue;
+                }
+
                 MatchEntity match = new MatchEntity();
                 match.setId(UUID.randomUUID().toString());
                 match.setTournamentId(tournamentId);
-                match.setPlayerAId(players.get(i).getId());
-                match.setPlayerBId(players.get(j).getId());
+                match.setPlayerAId(a.getId());
+                match.setPlayerBId(b.getId());
+                match.setRoundNumber(round);
                 match.setStatus("pending");
                 match.setWinsA(0);
                 match.setWinsB(0);
                 matches.add(match);
             }
+
+            PlayerEntity last = rotation.remove(playerSlots - 1);
+            rotation.add(1, last);
         }
+
         return matches;
     }
 
@@ -205,9 +227,18 @@ public class TournamentService {
 
     private TournamentDto toDto(TournamentEntity tournament, List<PlayerEntity> players, List<MatchEntity> matches) {
         List<PlayerDto> playerDtos = players.stream().map(p -> new PlayerDto(p.getId(), p.getName())).toList();
-        List<MatchDto> matchDtos = matches.stream().map(m -> new MatchDto(
-                m.getId(), m.getPlayerAId(), m.getPlayerBId(), m.getStatus(), m.getWinsA(), m.getWinsB(), m.getWinnerId()
-        )).toList();
+        List<MatchDto> matchDtos = matches.stream()
+                .sorted(Comparator.comparingInt(MatchEntity::getRoundNumber).thenComparing(MatchEntity::getId))
+                .map(m -> new MatchDto(
+                        m.getId(),
+                        m.getPlayerAId(),
+                        m.getPlayerBId(),
+                        m.getRoundNumber(),
+                        m.getStatus(),
+                        m.getWinsA(),
+                        m.getWinsB(),
+                        m.getWinnerId()
+                )).toList();
 
         return new TournamentDto(
                 tournament.getId(),

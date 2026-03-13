@@ -9,6 +9,7 @@ export interface Match {
   id: string
   playerAId: string
   playerBId: string
+  roundNumber: number
   status: MatchStatus
   winsA: number
   winsB: number

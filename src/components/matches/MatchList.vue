@@ -66,6 +66,8 @@ const filteredMatches = computed(() =>
         <span :style="{ color: match.status === 'completed' ? 'var(--ok)' : 'var(--text-soft)' }">{{ match.status }}</span>
       </div>
 
+      <div style="margin-top:0.3rem; color: var(--text-soft)">Round {{ match.roundNumber }}</div>
+
       <div style="display:flex; gap:0.5rem; margin-top:0.6rem; align-items:center;">
         <input v-model.number="inputFor(match.id).winsA" type="number" min="0" max="2" style="width:70px" />
         <span>-</span>

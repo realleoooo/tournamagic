@@ -20,6 +20,9 @@ public class MatchEntity {
     @Column(name = "player_b_id", nullable = false)
     private String playerBId;
 
+    @Column(name = "round_number", nullable = false)
+    private int roundNumber;
+
     @Column(nullable = false)
     private String status;
 
@@ -40,6 +43,8 @@ public class MatchEntity {
     public void setPlayerAId(String playerAId) { this.playerAId = playerAId; }
     public String getPlayerBId() { return playerBId; }
     public void setPlayerBId(String playerBId) { this.playerBId = playerBId; }
+    public int getRoundNumber() { return roundNumber; }
+    public void setRoundNumber(int roundNumber) { this.roundNumber = roundNumber; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public int getWinsA() { return winsA; }
