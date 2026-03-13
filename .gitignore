@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+.env
+.DS_Store
+backend/target/
+backend/.mvn/
+backend/*.iml
+backend/data/
+*.tsbuildinfo
