@@ -6,28 +6,11 @@ Magic: The Gathering draft tournament tracker with Vue 3 + Vite frontend and Spr
 - **Phase 1:** Frontend foundation (Vue/Vite/TS, Pinia, Router, MTG-themed UI tokens).
 - **Phase 2:** Tournament domain logic (round-robin pairings, Bo3 validation, ranking).
 - **Phase 3:** Complete tournament UX (setup, leaderboard, progress, results, filters, undo).
-- **Phase 4:** Spring Boot REST backend + persistence (Flyway + PostgreSQL), frontend API integration.
+- **Phase 4:** Spring Boot REST backend + persistence (H2 + Flyway), frontend API integration.
 - **Phase 5:** Dockerized full stack (`docker-compose`) for one-command startup.
 - **Phase 6:** Hardening/QA baseline via backend integration tests, frontend domain tests, error/loading states.
 
-## Database
-The app now uses a **local PostgreSQL container** (Supabase-compatible connection settings) via Docker Compose:
-- service: `supabase-db`
-- image: `postgres:16-alpine`
-- db: `tournamagic`
-- user/password: `postgres/postgres`
-
-Backend datasource defaults can be overridden with environment variables:
-- `SPRING_DATASOURCE_URL`
-- `SPRING_DATASOURCE_USERNAME`
-- `SPRING_DATASOURCE_PASSWORD`
-
 ## Local development
-### Start database first
-```bash
-docker compose up -d supabase-db
-```
-
 ### Backend
 ```bash
 cd backend
@@ -50,7 +33,6 @@ docker compose up --build
 Then open:
 - App: `http://localhost:5173`
 - API: `http://localhost:8080/api/tournaments`
-- Database port: `localhost:5432`
 
 ## Testing
 ### Frontend
