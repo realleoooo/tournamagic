@@ -53,6 +53,7 @@ const onReset = async () => {
         <ProgressPanel :completed="store.completion.completed" :total="store.completion.total" />
         <MatchList
           :matches="tournament.matches"
+          :players="tournament.players"
           :resolve-name="store.resolveName"
           @submit="store.submitResult"
           @clear="store.clearResult"
