@@ -1,6 +1,6 @@
 services:
   supabase-db:
-    image: supabase/postgres:latest
+    image: postgres:16-alpine
     container_name: tournamagic-supabase-db
     restart: unless-stopped
     environment:

@@ -11,9 +11,9 @@ Magic: The Gathering draft tournament tracker with Vue 3 + Vite frontend and Spr
 - **Phase 6:** Hardening/QA baseline via backend integration tests, frontend domain tests, error/loading states.
 
 ## Database
-The app now uses **Supabase Postgres (local container)** via Docker Compose:
+The app now uses a **local PostgreSQL container** (Supabase-compatible connection settings) via Docker Compose:
 - service: `supabase-db`
-- image: `supabase/postgres:latest`
+- image: `postgres:16-alpine`
 - db: `tournamagic`
 - user/password: `postgres/postgres`
 
