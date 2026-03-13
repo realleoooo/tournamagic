@@ -23,7 +23,7 @@ npm install
 npm run dev
 ```
 
-Frontend runs on `http://localhost:5173` and calls backend via `/api` proxy to `http://localhost:8080`.
+Frontend runs on `http://localhost:5174` and calls backend via `/api` proxy to `http://localhost:8080`.
 
 ## Docker (no local npm/java needed)
 ```bash
@@ -31,7 +31,7 @@ docker compose up --build
 ```
 
 Then open:
-- App: `http://localhost:5173`
+- App: `http://localhost:5174`
 - API: `http://localhost:8080/api/tournaments`
 
 ## Testing
