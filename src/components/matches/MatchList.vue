@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { Match, Player } from '@/domain/models'
+import MatchTimer from '@/components/matches/MatchTimer.vue'
 
 const props = defineProps<{
   matches: Match[]
@@ -125,6 +126,8 @@ watch(
           </button>
           <button type="button" class="secondary" @click="emit('clear', match.id)">Undo</button>
         </div>
+
+        <MatchTimer />
       </div>
     </div>
   </section>
