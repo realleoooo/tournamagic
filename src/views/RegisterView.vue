@@ -14,7 +14,7 @@ const authStore = useAuthStore()
 const formRef = ref<AuthFormExposed | null>(null)
 const formError = ref('')
 
-const submitRegistration = (values: { name: string; email: string; password: string }) => {
+const submitRegistration = async (values: { name: string; email: string; password: string }) => {
   const errors = validateRegistration(values)
   formRef.value?.setErrors(errors)
   formError.value = ''
@@ -23,7 +23,7 @@ const submitRegistration = (values: { name: string; email: string; password: str
     return
   }
 
-  const result = authStore.register(values)
+  const result = await authStore.register(values)
   if (!result.ok) {
     formError.value = result.error
     return

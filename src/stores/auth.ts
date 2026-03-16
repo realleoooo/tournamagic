@@ -1,18 +1,19 @@
 import { defineStore } from 'pinia'
+import { authApi } from '@/api/authApi'
 
 export type AuthUser = {
+  id: string
   name: string
   email: string
 }
 
-type StoredUser = AuthUser & {
-  password: string
+type AuthSession = {
+  accessToken: string
+  refreshToken: string
+  user: AuthUser
 }
 
-const AUTH_USERS_STORAGE_KEY = 'tournamagic.auth.users'
 const AUTH_SESSION_STORAGE_KEY = 'tournamagic.auth.session'
-
-const normalizeEmail = (email: string) => email.trim().toLowerCase()
 
 const safeParse = <T>(raw: string | null, fallback: T): T => {
   if (!raw) {
@@ -26,30 +27,26 @@ const safeParse = <T>(raw: string | null, fallback: T): T => {
   }
 }
 
-const loadUsers = (): StoredUser[] => safeParse<StoredUser[]>(window.localStorage.getItem(AUTH_USERS_STORAGE_KEY), [])
+const loadSession = (): AuthSession | null => safeParse<AuthSession | null>(window.localStorage.getItem(AUTH_SESSION_STORAGE_KEY), null)
 
-const saveUsers = (users: StoredUser[]) => {
-  window.localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(users))
-}
-
-const loadSession = (): AuthUser | null => safeParse<AuthUser | null>(window.localStorage.getItem(AUTH_SESSION_STORAGE_KEY), null)
-
-const saveSession = (user: AuthUser | null) => {
-  if (!user) {
+const saveSession = (session: AuthSession | null) => {
+  if (!session) {
     window.localStorage.removeItem(AUTH_SESSION_STORAGE_KEY)
     return
   }
 
-  window.localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(user))
+  window.localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session))
 }
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null as AuthUser | null,
+    accessToken: '',
+    refreshToken: '',
     initialized: false
   }),
   getters: {
-    isAuthenticated: (state) => Boolean(state.user)
+    isAuthenticated: (state) => Boolean(state.user && state.accessToken)
   },
   actions: {
     initialize() {
@@ -57,59 +54,54 @@ export const useAuthStore = defineStore('auth', {
         return
       }
 
-      this.user = loadSession()
+      const session = loadSession()
+      this.user = session?.user ?? null
+      this.accessToken = session?.accessToken ?? ''
+      this.refreshToken = session?.refreshToken ?? ''
       this.initialized = true
     },
-    register(values: { name: string; email: string; password: string }) {
-      const users = loadUsers()
-      const normalizedEmail = normalizeEmail(values.email)
-      const existing = users.find((candidate) => normalizeEmail(candidate.email) === normalizedEmail)
-
-      if (existing) {
+    async register(values: { name: string; email: string; password: string }) {
+      try {
+        const session = await authApi.register(values)
+        this.setSession(session)
+        return { ok: true as const }
+      } catch (error) {
         return {
           ok: false as const,
-          error: 'An account with this email already exists.'
+          error: error instanceof Error ? error.message : 'Unable to register.'
         }
       }
-
-      const createdUser: StoredUser = {
-        name: values.name.trim(),
-        email: normalizedEmail,
-        password: values.password
-      }
-
-      users.push(createdUser)
-      saveUsers(users)
-
-      const sessionUser: AuthUser = {
-        name: createdUser.name,
-        email: createdUser.email
-      }
-
-      this.user = sessionUser
-      saveSession(sessionUser)
-
-      return { ok: true as const }
     },
-    login(values: { email: string; password: string }) {
-      const users = loadUsers()
-      const normalizedEmail = normalizeEmail(values.email)
-      const user = users.find((candidate) => normalizeEmail(candidate.email) === normalizedEmail)
-
-      if (!user || user.password !== values.password) {
+    async login(values: { email: string; password: string }) {
+      try {
+        const session = await authApi.login(values)
+        this.setSession(session)
+        return { ok: true as const }
+      } catch (error) {
         return {
           ok: false as const,
-          error: 'Incorrect email or password.'
+          error: error instanceof Error ? error.message : 'Unable to login.'
         }
       }
-
-      const sessionUser: AuthUser = { name: user.name, email: user.email }
-      this.user = sessionUser
-      saveSession(sessionUser)
-      return { ok: true as const }
+    },
+    setSession(session: { accessToken: string; refreshToken: string; userId: string; email: string; name: string }) {
+      this.accessToken = session.accessToken
+      this.refreshToken = session.refreshToken
+      this.user = {
+        id: session.userId,
+        email: session.email,
+        name: session.name
+      }
+      saveSession({
+        accessToken: this.accessToken,
+        refreshToken: this.refreshToken,
+        user: this.user
+      })
     },
     logout() {
       this.user = null
+      this.accessToken = ''
+      this.refreshToken = ''
       saveSession(null)
     }
   }

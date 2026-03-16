@@ -2,37 +2,27 @@
 
 Magic: The Gathering draft tournament tracker with Vue 3 + Vite frontend and Spring Boot backend.
 
-## Implemented phases
-- **Phase 1:** Frontend foundation (Vue/Vite/TS, Pinia, Router, MTG-themed UI tokens).
-- **Phase 2:** Tournament domain logic (round-robin pairings, Bo3 validation, ranking).
-- **Phase 3:** Complete tournament UX (setup, leaderboard, progress, results, filters, undo).
-- **Phase 4:** Spring Boot REST backend + persistence (H2 + Flyway), frontend API integration.
-- **Phase 5:** Dockerized full stack (`docker-compose`) for one-command startup.
-- **Phase 6:** Hardening/QA baseline via backend integration tests, frontend domain tests, error/loading states.
+## Architecture
+- Frontend: Vue 3 + Pinia + Vue Router
+- Backend: Spring Boot REST API
+- Data + Auth: Supabase (self-hosted in Docker)
 
-## Local development
-### Backend
-```bash
-cd backend
-mvn spring-boot:run
-```
-
-### Frontend
-```bash
-npm install
-npm run dev
-```
-
-Frontend runs on `http://localhost:5174` and calls backend via `/api` proxy to `http://localhost:8080`.
-
-## Docker (no local npm/java needed)
+## Run locally with Docker
 ```bash
 docker compose up --build
 ```
 
 Then open:
 - App: `http://localhost:5174`
-- API: `http://localhost:8080/api/tournaments`
+- API: `http://localhost:8080/api`
+
+Additional setup details are in `docs/setup.md`.
+
+## Environment variables (Docker)
+- `SUPABASE_DB_PASSWORD` (default: `postgres`)
+- `SUPABASE_JWT_SECRET`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Testing
 ### Frontend
@@ -45,10 +35,3 @@ npm test
 cd backend
 mvn test
 ```
-
-## 431 troubleshooting (Vite dev server)
-If you see `431 Request Header Fields Too Large` on localhost:
-1. Open in private/incognito mode.
-2. Clear localhost cookies/site data.
-3. Try another port: `npm run dev -- --port 5174`.
-4. Disable browser extensions that inject headers.

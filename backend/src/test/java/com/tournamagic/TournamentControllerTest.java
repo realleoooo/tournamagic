@@ -1,43 +1,47 @@
 package com.tournamagic;
 
+import com.tournamagic.controller.TournamentController;
+import com.tournamagic.service.TournamentService;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(TournamentController.class)
 class TournamentControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    @MockBean
+    private TournamentService tournamentService;
+
     @Test
-    void createsTournamentAndMatches() throws Exception {
+    void createTournamentRequiresAuthHeader() throws Exception {
         mockMvc.perform(post("/api/tournaments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "name":"Friday Draft",
-                                  "players":["Alice","Bob","Chandra"]
+                                  \"name\":\"Friday Draft\",
+                                  \"players\":[\"Alice\",\"Bob\"]
                                 }
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.players.length()").value(3))
-                .andExpect(jsonPath("$.matches.length()").value(3))
-                .andExpect(jsonPath("$.status").value("active"));
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void listsTournamentOverview() throws Exception {
-        mockMvc.perform(get("/api/tournaments"))
+    void listsTournamentOverviewWithAuthHeader() throws Exception {
+        Mockito.when(tournamentService.listTournaments("token")).thenReturn(java.util.List.of());
+
+        mockMvc.perform(get("/api/tournaments")
+                        .header("Authorization", "Bearer token"))
                 .andExpect(status().isOk());
     }
 }

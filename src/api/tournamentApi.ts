@@ -2,6 +2,7 @@ import type { Tournament } from '@/domain/models'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 const ID_KEY = 'tournamagic.tournamentId'
+const AUTH_SESSION_STORAGE_KEY = 'tournamagic.auth.session'
 
 export type TournamentSummary = {
   id: string
@@ -16,6 +17,10 @@ export type TournamentSummary = {
 type CreateTournamentPayload = { name: string; players: string[] }
 type MatchPayload = { winsA: number; winsB: number }
 
+type AuthSession = {
+  accessToken?: string
+}
+
 const readId = () => window.localStorage.getItem(ID_KEY) ?? undefined
 const writeId = (id?: string) => {
   if (!id) {
@@ -25,11 +30,27 @@ const writeId = (id?: string) => {
   window.localStorage.setItem(ID_KEY, id)
 }
 
+const readAccessToken = () => {
+  const raw = window.localStorage.getItem(AUTH_SESSION_STORAGE_KEY)
+  if (!raw) {
+    return ''
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as AuthSession
+    return parsed.accessToken ?? ''
+  } catch {
+    return ''
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = readAccessToken()
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {})
     }
   })

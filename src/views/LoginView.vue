@@ -14,7 +14,7 @@ const authStore = useAuthStore()
 const formRef = ref<AuthFormExposed | null>(null)
 const formError = ref('')
 
-const submitLogin = (values: { email: string; password: string; name: string }) => {
+const submitLogin = async (values: { email: string; password: string; name: string }) => {
   const errors = validateLogin(values)
   formRef.value?.setErrors(errors)
   formError.value = ''
@@ -23,7 +23,7 @@ const submitLogin = (values: { email: string; password: string; name: string }) 
     return
   }
 
-  const result = authStore.login(values)
+  const result = await authStore.login(values)
 
   if (!result.ok) {
     formError.value = result.error
