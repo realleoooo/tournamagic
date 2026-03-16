@@ -1,4 +1,5 @@
 export type MatchStatus = 'pending' | 'completed'
+export type TimerDirection = 'up' | 'down'
 
 export interface Player {
   id: string
@@ -13,6 +14,13 @@ export interface Match {
   winsA: number
   winsB: number
   winnerId?: string
+  timerDirection: TimerDirection
+  timerDurationSeconds: number
+  timerNotifyIntervalSeconds: number
+  timerRunning: boolean
+  timerElapsedSeconds: number
+  nextNotificationAtSeconds: number
+  remainingSeconds: number
 }
 
 export interface Tournament {

@@ -57,6 +57,7 @@ const onReset = async () => {
           :resolve-name="store.resolveName"
           @submit="store.submitResult"
           @clear="store.clearResult"
+          @timer-update="store.updateMatchTimer"
         />
       </div>
       <div class="grid">

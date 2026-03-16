@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "matches")
 public class MatchEntity {
@@ -32,6 +34,24 @@ public class MatchEntity {
     @Column(name = "winner_id")
     private String winnerId;
 
+    @Column(name = "timer_direction", nullable = false)
+    private String timerDirection;
+
+    @Column(name = "timer_duration_seconds", nullable = false)
+    private int timerDurationSeconds;
+
+    @Column(name = "timer_notify_interval_seconds", nullable = false)
+    private int timerNotifyIntervalSeconds;
+
+    @Column(name = "timer_running", nullable = false)
+    private boolean timerRunning;
+
+    @Column(name = "timer_started_at")
+    private Instant timerStartedAt;
+
+    @Column(name = "timer_elapsed_seconds", nullable = false)
+    private int timerElapsedSeconds;
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getTournamentId() { return tournamentId; }
@@ -48,4 +68,16 @@ public class MatchEntity {
     public void setWinsB(int winsB) { this.winsB = winsB; }
     public String getWinnerId() { return winnerId; }
     public void setWinnerId(String winnerId) { this.winnerId = winnerId; }
+    public String getTimerDirection() { return timerDirection; }
+    public void setTimerDirection(String timerDirection) { this.timerDirection = timerDirection; }
+    public int getTimerDurationSeconds() { return timerDurationSeconds; }
+    public void setTimerDurationSeconds(int timerDurationSeconds) { this.timerDurationSeconds = timerDurationSeconds; }
+    public int getTimerNotifyIntervalSeconds() { return timerNotifyIntervalSeconds; }
+    public void setTimerNotifyIntervalSeconds(int timerNotifyIntervalSeconds) { this.timerNotifyIntervalSeconds = timerNotifyIntervalSeconds; }
+    public boolean isTimerRunning() { return timerRunning; }
+    public void setTimerRunning(boolean timerRunning) { this.timerRunning = timerRunning; }
+    public Instant getTimerStartedAt() { return timerStartedAt; }
+    public void setTimerStartedAt(Instant timerStartedAt) { this.timerStartedAt = timerStartedAt; }
+    public int getTimerElapsedSeconds() { return timerElapsedSeconds; }
+    public void setTimerElapsedSeconds(int timerElapsedSeconds) { this.timerElapsedSeconds = timerElapsedSeconds; }
 }

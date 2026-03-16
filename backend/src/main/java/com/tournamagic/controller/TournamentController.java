@@ -48,6 +48,11 @@ public class TournamentController {
         return tournamentService.clearMatchResult(id, matchId);
     }
 
+    @PatchMapping("/{id}/matches/{matchId}/timer")
+    public TournamentDto updateMatchTimer(@PathVariable String id, @PathVariable String matchId, @RequestBody UpdateMatchTimerRequest request) {
+        return tournamentService.updateMatchTimer(id, matchId, request);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTournament(@PathVariable String id) {

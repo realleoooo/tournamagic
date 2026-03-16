@@ -15,6 +15,13 @@ export type TournamentSummary = {
 
 type CreateTournamentPayload = { name: string; players: string[] }
 type MatchPayload = { winsA: number; winsB: number }
+type MatchTimerPayload = {
+  running?: boolean
+  reset?: boolean
+  direction?: 'up' | 'down'
+  durationSeconds?: number
+  notifyIntervalSeconds?: number
+}
 
 const readId = () => window.localStorage.getItem(ID_KEY) ?? undefined
 const writeId = (id?: string) => {
@@ -72,6 +79,16 @@ export const tournamentApi = {
   async clearResult(tournamentId: string, matchId: string): Promise<Tournament> {
     return request<Tournament>(`/tournaments/${tournamentId}/matches/${matchId}`, {
       method: 'DELETE'
+    })
+  },
+  async updateMatchTimer(
+    tournamentId: string,
+    matchId: string,
+    payload: MatchTimerPayload
+  ): Promise<Tournament> {
+    return request<Tournament>(`/tournaments/${tournamentId}/matches/${matchId}/timer`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
     })
   },
   async deleteTournament(tournamentId: string): Promise<void> {

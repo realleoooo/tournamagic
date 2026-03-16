@@ -12,12 +12,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class TournamentService {
+    private static final String TIMER_UP = "up";
+    private static final String TIMER_DOWN = "down";
+    private static final int DEFAULT_NOTIFY_INTERVAL_SECONDS = 600;
+
     private final TournamentRepository tournamentRepository;
     private final PlayerRepository playerRepository;
     private final MatchRepository matchRepository;
@@ -88,9 +93,7 @@ public class TournamentService {
 
         TournamentEntity tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
-        MatchEntity match = matchRepository.findById(matchId)
-                .filter(m -> m.getTournamentId().equals(tournamentId))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
+        MatchEntity match = getMatch(tournamentId, matchId);
 
         match.setWinsA(request.winsA());
         match.setWinsB(request.winsB());
@@ -110,9 +113,7 @@ public class TournamentService {
     public TournamentDto clearMatchResult(String tournamentId, String matchId) {
         TournamentEntity tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
-        MatchEntity match = matchRepository.findById(matchId)
-                .filter(m -> m.getTournamentId().equals(tournamentId))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
+        MatchEntity match = getMatch(tournamentId, matchId);
 
         match.setStatus("pending");
         match.setWinsA(0);
@@ -123,6 +124,57 @@ public class TournamentService {
         tournament.setStatus("active");
         tournamentRepository.save(tournament);
 
+        return getTournament(tournamentId);
+    }
+
+    @Transactional
+    public TournamentDto updateMatchTimer(String tournamentId, String matchId, UpdateMatchTimerRequest request) {
+        tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
+        MatchEntity match = getMatch(tournamentId, matchId);
+
+        syncTimerState(match, Instant.now());
+
+        if (Boolean.TRUE.equals(request.reset())) {
+            match.setTimerElapsedSeconds(0);
+            if (match.isTimerRunning()) {
+                match.setTimerStartedAt(Instant.now());
+            }
+        }
+
+        if (request.direction() != null) {
+            String normalizedDirection = request.direction().trim().toLowerCase();
+            if (!TIMER_UP.equals(normalizedDirection) && !TIMER_DOWN.equals(normalizedDirection)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Timer direction must be 'up' or 'down'.");
+            }
+            match.setTimerDirection(normalizedDirection);
+        }
+
+        if (request.durationSeconds() != null) {
+            if (request.durationSeconds() < 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Timer duration must be >= 0.");
+            }
+            match.setTimerDurationSeconds(request.durationSeconds());
+        }
+
+        if (request.notifyIntervalSeconds() != null) {
+            if (request.notifyIntervalSeconds() <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Notify interval must be > 0.");
+            }
+            match.setTimerNotifyIntervalSeconds(request.notifyIntervalSeconds());
+        }
+
+        if (request.running() != null) {
+            if (request.running()) {
+                match.setTimerRunning(true);
+                match.setTimerStartedAt(Instant.now());
+            } else {
+                match.setTimerRunning(false);
+                match.setTimerStartedAt(null);
+            }
+        }
+
+        matchRepository.save(match);
         return getTournament(tournamentId);
     }
 
@@ -182,6 +234,12 @@ public class TournamentService {
                 match.setStatus("pending");
                 match.setWinsA(0);
                 match.setWinsB(0);
+                match.setTimerDirection(TIMER_UP);
+                match.setTimerDurationSeconds(0);
+                match.setTimerNotifyIntervalSeconds(DEFAULT_NOTIFY_INTERVAL_SECONDS);
+                match.setTimerRunning(false);
+                match.setTimerStartedAt(null);
+                match.setTimerElapsedSeconds(0);
                 matches.add(match);
             }
         }
@@ -203,11 +261,16 @@ public class TournamentService {
         return (winsA == 2 || winsB == 2) && total >= 2 && total <= 3;
     }
 
+    private MatchEntity getMatch(String tournamentId, String matchId) {
+        return matchRepository.findById(matchId)
+                .filter(m -> m.getTournamentId().equals(tournamentId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
+    }
+
     private TournamentDto toDto(TournamentEntity tournament, List<PlayerEntity> players, List<MatchEntity> matches) {
+        Instant now = Instant.now();
+        List<MatchDto> matchDtos = matches.stream().map(m -> toMatchDto(m, now)).toList();
         List<PlayerDto> playerDtos = players.stream().map(p -> new PlayerDto(p.getId(), p.getName())).toList();
-        List<MatchDto> matchDtos = matches.stream().map(m -> new MatchDto(
-                m.getId(), m.getPlayerAId(), m.getPlayerBId(), m.getStatus(), m.getWinsA(), m.getWinsB(), m.getWinnerId()
-        )).toList();
 
         return new TournamentDto(
                 tournament.getId(),
@@ -217,6 +280,55 @@ public class TournamentService {
                 playerDtos,
                 matchDtos
         );
+    }
+
+    private MatchDto toMatchDto(MatchEntity match, Instant now) {
+        int effectiveElapsed = calculateEffectiveElapsedSeconds(match, now);
+        long remaining = TIMER_DOWN.equals(match.getTimerDirection())
+                ? Math.max(0, (long) match.getTimerDurationSeconds() - effectiveElapsed)
+                : 0;
+        long nextNotification = ((effectiveElapsed / Math.max(1, match.getTimerNotifyIntervalSeconds())) + 1L)
+                * Math.max(1, match.getTimerNotifyIntervalSeconds());
+
+        return new MatchDto(
+                match.getId(),
+                match.getPlayerAId(),
+                match.getPlayerBId(),
+                match.getStatus(),
+                match.getWinsA(),
+                match.getWinsB(),
+                match.getWinnerId(),
+                match.getTimerDirection(),
+                match.getTimerDurationSeconds(),
+                match.getTimerNotifyIntervalSeconds(),
+                match.isTimerRunning(),
+                effectiveElapsed,
+                nextNotification,
+                remaining
+        );
+    }
+
+    private void syncTimerState(MatchEntity match, Instant now) {
+        if (!match.isTimerRunning() || match.getTimerStartedAt() == null) {
+            return;
+        }
+
+        int effectiveElapsed = calculateEffectiveElapsedSeconds(match, now);
+        match.setTimerElapsedSeconds(effectiveElapsed);
+        match.setTimerStartedAt(now);
+    }
+
+    private int calculateEffectiveElapsedSeconds(MatchEntity match, Instant now) {
+        if (!match.isTimerRunning() || match.getTimerStartedAt() == null) {
+            return match.getTimerElapsedSeconds();
+        }
+
+        long additional = Duration.between(match.getTimerStartedAt(), now).getSeconds();
+        if (additional <= 0) {
+            return match.getTimerElapsedSeconds();
+        }
+
+        return Math.toIntExact((long) match.getTimerElapsedSeconds() + additional);
     }
 
     private static class StandingDtoBuilder {

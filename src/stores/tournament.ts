@@ -94,6 +94,26 @@ export const useTournamentStore = defineStore('tournament', () => {
     }
   }
 
+
+  const updateMatchTimer = async (
+    matchId: string,
+    payload: {
+      running?: boolean
+      reset?: boolean
+      direction?: 'up' | 'down'
+      durationSeconds?: number
+      notifyIntervalSeconds?: number
+    }
+  ) => {
+    if (!tournament.value) return
+    const updated = await withLoading(() =>
+      tournamentApi.updateMatchTimer(tournament.value!.id, matchId, payload)
+    )
+    if (updated) {
+      tournament.value = updated
+    }
+  }
+
   const leaveTournament = () => {
     tournament.value = undefined
   }
@@ -139,6 +159,7 @@ export const useTournamentStore = defineStore('tournament', () => {
     createTournament,
     submitResult,
     clearResult,
+    updateMatchTimer,
     leaveTournament,
     resetTournament,
     deleteFromList,

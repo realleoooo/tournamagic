@@ -13,7 +13,14 @@ export const createRoundRobinMatches = (players: Player[]): Match[] => {
         playerBId: b.id,
         status: 'pending',
         winsA: 0,
-        winsB: 0
+        winsB: 0,
+        timerDirection: 'up',
+        timerDurationSeconds: 0,
+        timerNotifyIntervalSeconds: 600,
+        timerRunning: false,
+        timerElapsedSeconds: 0,
+        nextNotificationAtSeconds: 600,
+        remainingSeconds: 0
       })
     }
   }
