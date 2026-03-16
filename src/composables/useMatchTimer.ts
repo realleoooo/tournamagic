@@ -5,6 +5,8 @@ export type TimerMode = 'count_up' | 'count_down'
 export interface MatchTimerConfig {
   mode: TimerMode
   startDurationMs: number
+  remindersEnabled: boolean
+  reminderIntervalMs: number
 }
 
 const TICK_RATE_MS = 250
@@ -22,6 +24,8 @@ export const useMatchTimer = (initialConfig: MatchTimerConfig) => {
   const nowMs = ref(Date.now())
   const elapsedBeforeRunMs = ref(0)
   const runStartedAtMs = ref<number | null>(null)
+  const latestReminderMinutes = ref<number | null>(null)
+  const lastReminderMark = ref(0)
   let tickerId: number | undefined
 
   const stopTicker = () => {
@@ -29,20 +33,6 @@ export const useMatchTimer = (initialConfig: MatchTimerConfig) => {
       window.clearInterval(tickerId)
       tickerId = undefined
     }
-  }
-
-  const startTicker = () => {
-    if (tickerId !== undefined) return
-    tickerId = window.setInterval(() => {
-      nowMs.value = Date.now()
-
-      if (config.value.mode === 'count_down' && remainingMs.value <= 0) {
-        elapsedBeforeRunMs.value = config.value.startDurationMs
-        running.value = false
-        runStartedAtMs.value = null
-        stopTicker()
-      }
-    }, TICK_RATE_MS)
   }
 
   const elapsedMs = computed(() => {
@@ -57,6 +47,31 @@ export const useMatchTimer = (initialConfig: MatchTimerConfig) => {
   )
 
   const isExpired = computed(() => config.value.mode === 'count_down' && remainingMs.value <= 0)
+
+  const handleReminderTick = () => {
+    if (!config.value.remindersEnabled || config.value.reminderIntervalMs <= 0) return
+
+    const nextMark = Math.floor(elapsedMs.value / config.value.reminderIntervalMs)
+    if (nextMark > 0 && nextMark > lastReminderMark.value) {
+      lastReminderMark.value = nextMark
+      latestReminderMinutes.value = Math.floor((nextMark * config.value.reminderIntervalMs) / 60000)
+    }
+  }
+
+  const startTicker = () => {
+    if (tickerId !== undefined) return
+    tickerId = window.setInterval(() => {
+      nowMs.value = Date.now()
+      handleReminderTick()
+
+      if (config.value.mode === 'count_down' && remainingMs.value <= 0) {
+        elapsedBeforeRunMs.value = config.value.startDurationMs
+        running.value = false
+        runStartedAtMs.value = null
+        stopTicker()
+      }
+    }, TICK_RATE_MS)
+  }
 
   const start = () => {
     if (running.value || isExpired.value) return
@@ -80,7 +95,13 @@ export const useMatchTimer = (initialConfig: MatchTimerConfig) => {
     runStartedAtMs.value = null
     elapsedBeforeRunMs.value = 0
     nowMs.value = Date.now()
+    latestReminderMinutes.value = null
+    lastReminderMark.value = 0
     stopTicker()
+  }
+
+  const clearReminderNotice = () => {
+    latestReminderMinutes.value = null
   }
 
   const configure = (nextConfig: MatchTimerConfig) => {
@@ -95,11 +116,14 @@ export const useMatchTimer = (initialConfig: MatchTimerConfig) => {
   return {
     config,
     running,
+    elapsedMs,
     displayMs,
     isExpired,
+    latestReminderMinutes,
     start,
     pause,
     reset,
-    configure
+    configure,
+    clearReminderNotice
   }
 }
