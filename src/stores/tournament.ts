@@ -21,39 +21,49 @@ export const useTournamentStore = defineStore('tournament', () => {
     return { completed, total }
   })
 
-  const withLoading = async <T>(fn: () => Promise<T>): Promise<T | undefined> => {
+  const withLoading = async <T>(fn: () => Promise<T>, options?: { suppressError?: boolean }): Promise<T | undefined> => {
     loading.value = true
-    error.value = undefined
+    if (!options?.suppressError) {
+      error.value = undefined
+    }
     try {
       return await fn()
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Unknown error'
+      if (!options?.suppressError) {
+        error.value = err instanceof Error ? err.message : 'Unknown error'
+      }
       return undefined
     } finally {
       loading.value = false
     }
   }
 
-  const refreshTournamentList = async () => {
-    const list = await withLoading(() => tournamentApi.listTournaments())
+  const refreshTournamentList = async (options?: { suppressError?: boolean }) => {
+    const list = await withLoading(() => tournamentApi.listTournaments(), options)
     if (list) {
       tournaments.value = list
     }
   }
 
   const bootstrap = async () => {
-    await refreshTournamentList()
-    const savedId = tournamentApi.getStoredTournamentId()
-    if (!savedId) return
+    await refreshTournamentList({ suppressError: true })
 
-    const fetched = await withLoading(() => tournamentApi.fetchTournament(savedId))
+    const savedId = tournamentApi.getStoredTournamentId()
+    if (!savedId) {
+      error.value = undefined
+      return
+    }
+
+    const fetched = await withLoading(() => tournamentApi.fetchTournament(savedId), { suppressError: true })
     if (fetched) {
       tournament.value = fetched
+      error.value = undefined
       return
     }
 
     tournamentApi.setStoredTournamentId(undefined)
     tournament.value = undefined
+    error.value = undefined
   }
 
   const openTournament = async (id: string) => {
@@ -93,7 +103,6 @@ export const useTournamentStore = defineStore('tournament', () => {
       await refreshTournamentList()
     }
   }
-
 
   const updateMatchTimer = async (
     matchId: string,
