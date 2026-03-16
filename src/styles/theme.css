@@ -2,18 +2,33 @@
 body {
   margin: 0;
   font-family: Inter, system-ui, sans-serif;
-  background: radial-gradient(circle at top, #1d1334, var(--bg-main));
+  background: radial-gradient(circle at top, color-mix(in srgb, var(--accent-arcane) 25%, #06070b), var(--bg-main));
   color: var(--text-main);
 }
 
 .app-bg { min-height: 100vh; }
 .topbar {
-  text-align: center;
-  border-bottom: 1px solid #37275f;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-arcane) 45%, transparent);
   padding: 1rem;
+}
+.topbar__content {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
 }
 .topbar h1 { margin: 0; color: var(--accent-gold); }
 .topbar p { margin: 0.25rem 0 0; color: var(--text-soft); }
+.theme-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
 .layout {
   max-width: 1100px;
   margin: 0 auto;
@@ -21,10 +36,10 @@ body {
 }
 .card {
   background: linear-gradient(180deg, var(--bg-elevated), var(--bg-surface));
-  border: 1px solid #453171;
+  border: 1px solid color-mix(in srgb, var(--accent-arcane) 35%, transparent);
   border-radius: var(--radius);
   padding: 1rem;
-  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.2), 0 6px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-arcane) 25%, transparent), 0 6px 24px rgba(0, 0, 0, 0.35);
 }
 button {
   border: 0;
@@ -38,11 +53,18 @@ button {
 button.secondary { background: #374151; }
 button.warn { background: var(--danger); }
 input, select {
-  background: #111827;
+  background: color-mix(in srgb, var(--bg-main) 85%, black);
   color: var(--text-main);
-  border: 1px solid #374151;
+  border: 1px solid color-mix(in srgb, var(--accent-arcane) 45%, transparent);
   border-radius: 8px;
   padding: 0.55rem;
+}
+
+@media (max-width: 720px) {
+  .topbar__content {
+    flex-direction: column;
+    text-align: center;
+  }
 }
 .grid {
   display: grid;

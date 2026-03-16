@@ -1,12 +1,54 @@
 :root {
-  --bg-main: #0f1117;
-  --bg-surface: #171a24;
-  --bg-elevated: #1f2433;
-  --text-main: #f4f6ff;
-  --text-soft: #a2abc8;
-  --accent-arcane: #7c3aed;
-  --accent-gold: #d4af37;
+  --bg-main: #10180f;
+  --bg-surface: #19251a;
+  --bg-elevated: #243427;
+  --text-main: #edf7eb;
+  --text-soft: #afc7b0;
+  --accent-arcane: #2f9e44;
+  --accent-gold: #e7cc72;
   --ok: #22c55e;
   --danger: #ef4444;
   --radius: 14px;
+}
+
+:root[data-theme='red'] {
+  --bg-main: #230f12;
+  --bg-surface: #31161d;
+  --bg-elevated: #3f1f26;
+  --text-main: #fff1ee;
+  --text-soft: #e3bbb5;
+  --accent-arcane: #df4b2d;
+  --accent-gold: #ffc66a;
+}
+
+:root[data-theme='blue'] {
+  --bg-main: #0f1724;
+  --bg-surface: #182236;
+  --bg-elevated: #1f2d45;
+  --text-main: #e9f2ff;
+  --text-soft: #afc2de;
+  --accent-arcane: #3f83f8;
+  --accent-gold: #8ad2ff;
+}
+
+:root[data-theme='white'] {
+  --bg-main: #e8e6d9;
+  --bg-surface: #f5f2e3;
+  --bg-elevated: #fdf9ec;
+  --text-main: #2f2921;
+  --text-soft: #6d6557;
+  --accent-arcane: #a68d4f;
+  --accent-gold: #d7b654;
+  --ok: #1d8d4d;
+  --danger: #c53535;
+}
+
+:root[data-theme='black'] {
+  --bg-main: #0b0a0f;
+  --bg-surface: #17121e;
+  --bg-elevated: #241d2f;
+  --text-main: #f2ebff;
+  --text-soft: #b8a9d1;
+  --accent-arcane: #8b5cf6;
+  --accent-gold: #d99cff;
 }
