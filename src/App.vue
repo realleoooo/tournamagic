@@ -58,8 +58,8 @@ const applyTheme = (theme: ThemeValue) => {
   window.localStorage.setItem(THEME_STORAGE_KEY, theme)
 }
 
-const logout = () => {
-  authStore.logout()
+const logout = async () => {
+  await authStore.logout()
   router.push('/login')
 }
 

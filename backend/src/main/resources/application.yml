@@ -13,5 +13,15 @@ spring:
   flyway:
     enabled: true
 
+auth:
+  session:
+    ttl-hours: ${AUTH_SESSION_TTL_HOURS:168}
+  google:
+    audience:
+      - ${AUTH_GOOGLE_CLIENT_ID:google-client-id.apps.googleusercontent.com}
+  apple:
+    audience:
+      - ${AUTH_APPLE_CLIENT_ID:com.example.tournamagic}
+
 server:
   port: 8080

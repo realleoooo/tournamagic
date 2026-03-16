@@ -1,46 +1,10 @@
 import { defineStore } from 'pinia'
+import { authApi } from '@/api/authApi'
+import { saveAuthToken, getAuthToken } from '@/utils/authSession'
 
 export type AuthUser = {
   name: string
   email: string
-}
-
-type StoredUser = AuthUser & {
-  password: string
-}
-
-const AUTH_USERS_STORAGE_KEY = 'tournamagic.auth.users'
-const AUTH_SESSION_STORAGE_KEY = 'tournamagic.auth.session'
-
-const normalizeEmail = (email: string) => email.trim().toLowerCase()
-
-const safeParse = <T>(raw: string | null, fallback: T): T => {
-  if (!raw) {
-    return fallback
-  }
-
-  try {
-    return JSON.parse(raw) as T
-  } catch {
-    return fallback
-  }
-}
-
-const loadUsers = (): StoredUser[] => safeParse<StoredUser[]>(window.localStorage.getItem(AUTH_USERS_STORAGE_KEY), [])
-
-const saveUsers = (users: StoredUser[]) => {
-  window.localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(users))
-}
-
-const loadSession = (): AuthUser | null => safeParse<AuthUser | null>(window.localStorage.getItem(AUTH_SESSION_STORAGE_KEY), null)
-
-const saveSession = (user: AuthUser | null) => {
-  if (!user) {
-    window.localStorage.removeItem(AUTH_SESSION_STORAGE_KEY)
-    return
-  }
-
-  window.localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(user))
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -52,65 +16,73 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => Boolean(state.user)
   },
   actions: {
-    initialize() {
+    async initialize() {
       if (this.initialized) {
         return
       }
 
-      this.user = loadSession()
-      this.initialized = true
-    },
-    register(values: { name: string; email: string; password: string }) {
-      const users = loadUsers()
-      const normalizedEmail = normalizeEmail(values.email)
-      const existing = users.find((candidate) => normalizeEmail(candidate.email) === normalizedEmail)
+      const token = getAuthToken()
+      if (!token) {
+        this.initialized = true
+        return
+      }
 
-      if (existing) {
+      try {
+        this.user = await authApi.getSession()
+      } catch {
+        saveAuthToken(undefined)
+        this.user = null
+      } finally {
+        this.initialized = true
+      }
+    },
+    async register(values: { name: string; email: string; password: string }) {
+      try {
+        const result = await authApi.register(values)
+        this.user = result.user
+        saveAuthToken(result.token)
+        return { ok: true as const }
+      } catch (error) {
         return {
           ok: false as const,
-          error: 'An account with this email already exists.'
+          error: error instanceof Error ? error.message : 'Could not register.'
         }
       }
-
-      const createdUser: StoredUser = {
-        name: values.name.trim(),
-        email: normalizedEmail,
-        password: values.password
-      }
-
-      users.push(createdUser)
-      saveUsers(users)
-
-      const sessionUser: AuthUser = {
-        name: createdUser.name,
-        email: createdUser.email
-      }
-
-      this.user = sessionUser
-      saveSession(sessionUser)
-
-      return { ok: true as const }
     },
-    login(values: { email: string; password: string }) {
-      const users = loadUsers()
-      const normalizedEmail = normalizeEmail(values.email)
-      const user = users.find((candidate) => normalizeEmail(candidate.email) === normalizedEmail)
-
-      if (!user || user.password !== values.password) {
+    async login(values: { email: string; password: string }) {
+      try {
+        const result = await authApi.login(values)
+        this.user = result.user
+        saveAuthToken(result.token)
+        return { ok: true as const }
+      } catch (error) {
         return {
           ok: false as const,
-          error: 'Incorrect email or password.'
+          error: error instanceof Error ? error.message : 'Could not log in.'
         }
       }
-
-      const sessionUser: AuthUser = { name: user.name, email: user.email }
-      this.user = sessionUser
-      saveSession(sessionUser)
-      return { ok: true as const }
     },
-    logout() {
+    async socialLogin(values: { provider: 'google' | 'apple'; idToken: string }) {
+      try {
+        const result = await authApi.socialLogin(values)
+        this.user = result.user
+        saveAuthToken(result.token)
+        return { ok: true as const }
+      } catch (error) {
+        return {
+          ok: false as const,
+          error: error instanceof Error ? error.message : 'Social login failed.'
+        }
+      }
+    },
+    async logout() {
+      try {
+        await authApi.logout()
+      } catch {
+        // no-op: clear local state regardless
+      }
       this.user = null
-      saveSession(null)
+      saveAuthToken(undefined)
     }
   }
 })
