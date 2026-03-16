@@ -14,7 +14,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const formRef = ref<AuthFormExposed | null>(null)
 const formError = ref('')
-const { loadingProvider, signInWithApple, signInWithGoogle } = useSocialAuth()
+const { loadingProvider, signInWithGoogle } = useSocialAuth()
 
 const submitLogin = async (values: { email: string; password: string; name: string }) => {
   const errors = validateLogin(values)
@@ -35,33 +35,20 @@ const submitLogin = async (values: { email: string; password: string; name: stri
   router.push('/')
 }
 
-const completeSocialLogin = async (provider: 'google' | 'apple', token: string) => {
-  formError.value = ''
-  const result = await authStore.socialLogin({ provider, idToken: token })
-
-  if (!result.ok) {
-    formError.value = result.error
-    return
-  }
-
-  router.push('/')
-}
-
 const loginWithGoogle = async () => {
   try {
+    formError.value = ''
     const token = await signInWithGoogle()
-    await completeSocialLogin('google', token)
+    const result = await authStore.socialLogin({ provider: 'google', idToken: token })
+
+    if (!result.ok) {
+      formError.value = result.error
+      return
+    }
+
+    router.push('/')
   } catch (error) {
     formError.value = error instanceof Error ? error.message : 'Google login failed.'
-  }
-}
-
-const loginWithApple = async () => {
-  try {
-    const token = await signInWithApple()
-    await completeSocialLogin('apple', token)
-  } catch (error) {
-    formError.value = error instanceof Error ? error.message : 'Apple login failed.'
   }
 }
 </script>
@@ -80,9 +67,6 @@ const loginWithApple = async () => {
     <div class="social-actions">
       <button type="button" class="secondary" :disabled="loadingProvider !== null" @click="loginWithGoogle">
         Continue with Google
-      </button>
-      <button type="button" class="secondary" :disabled="loadingProvider !== null" @click="loginWithApple">
-        Continue with Apple
       </button>
     </div>
 

@@ -47,7 +47,7 @@ export const authApi = {
       body: JSON.stringify(payload)
     })
   },
-  socialLogin(payload: { provider: 'google' | 'apple'; idToken: string }) {
+  socialLogin(payload: { provider: 'google'; idToken: string }) {
     return request<AuthResponse>('/auth/social', {
       method: 'POST',
       body: JSON.stringify(payload)

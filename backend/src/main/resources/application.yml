@@ -19,9 +19,6 @@ auth:
   google:
     audience:
       - ${AUTH_GOOGLE_CLIENT_ID:google-client-id.apps.googleusercontent.com}
-  apple:
-    audience:
-      - ${AUTH_APPLE_CLIENT_ID:com.example.tournamagic}
 
 server:
   port: 8080

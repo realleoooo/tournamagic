@@ -62,7 +62,7 @@ export const useAuthStore = defineStore('auth', {
         }
       }
     },
-    async socialLogin(values: { provider: 'google' | 'apple'; idToken: string }) {
+    async socialLogin(values: { provider: 'google'; idToken: string }) {
       try {
         const result = await authApi.socialLogin(values)
         this.user = result.user
