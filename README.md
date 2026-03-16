@@ -16,7 +16,7 @@ Then open:
 - App: `http://localhost:5174`
 - API: `http://localhost:8080/api`
 
-Additional setup details are in `docs/setup.md`.
+Additional setup details are in `docs/setup.md` and Docker troubleshooting is in `docs/docker-troubleshooting.md`.
 
 ## Environment variables (Docker)
 - `SUPABASE_DB_PASSWORD` (default: `postgres`)
