@@ -21,6 +21,18 @@ body {
 }
 .topbar h1 { margin: 0; color: var(--accent-gold); }
 .topbar p { margin: 0.25rem 0 0; color: var(--text-soft); }
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.auth-status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
 .theme-picker {
   display: flex;
   align-items: center;
@@ -64,6 +76,10 @@ input, select {
   .topbar__content {
     flex-direction: column;
     text-align: center;
+  }
+
+  .topbar__actions {
+    flex-direction: column;
   }
 }
 .grid {
