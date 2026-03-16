@@ -1,4 +1,4 @@
-import type { Tournament } from '@/domain/models'
+import type { Match, Tournament } from '@/domain/models'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 const ID_KEY = 'tournamagic.tournamentId'
@@ -32,6 +32,22 @@ const writeId = (id?: string) => {
   window.localStorage.setItem(ID_KEY, id)
 }
 
+const normalizeMatch = (match: Match): Match => ({
+  ...match,
+  timerDirection: match.timerDirection ?? 'up',
+  timerDurationSeconds: match.timerDurationSeconds ?? 0,
+  timerNotifyIntervalSeconds: match.timerNotifyIntervalSeconds ?? 600,
+  timerRunning: match.timerRunning ?? false,
+  timerElapsedSeconds: match.timerElapsedSeconds ?? 0,
+  nextNotificationAtSeconds: match.nextNotificationAtSeconds ?? 600,
+  remainingSeconds: match.remainingSeconds ?? 0
+})
+
+const normalizeTournament = (tournament: Tournament): Tournament => ({
+  ...tournament,
+  matches: tournament.matches.map((match) => normalizeMatch(match))
+})
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -60,36 +76,44 @@ export const tournamentApi = {
     return request<TournamentSummary[]>('/tournaments')
   },
   async createTournament(payload: CreateTournamentPayload): Promise<Tournament> {
-    const tournament = await request<Tournament>('/tournaments', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    })
+    const tournament = normalizeTournament(
+      await request<Tournament>('/tournaments', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+    )
     writeId(tournament.id)
     return tournament
   },
   async fetchTournament(id: string): Promise<Tournament> {
-    return request<Tournament>(`/tournaments/${id}`)
+    return normalizeTournament(await request<Tournament>(`/tournaments/${id}`))
   },
   async submitResult(tournamentId: string, matchId: string, payload: MatchPayload): Promise<Tournament> {
-    return request<Tournament>(`/tournaments/${tournamentId}/matches/${matchId}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload)
-    })
+    return normalizeTournament(
+      await request<Tournament>(`/tournaments/${tournamentId}/matches/${matchId}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      })
+    )
   },
   async clearResult(tournamentId: string, matchId: string): Promise<Tournament> {
-    return request<Tournament>(`/tournaments/${tournamentId}/matches/${matchId}`, {
-      method: 'DELETE'
-    })
+    return normalizeTournament(
+      await request<Tournament>(`/tournaments/${tournamentId}/matches/${matchId}`, {
+        method: 'DELETE'
+      })
+    )
   },
   async updateMatchTimer(
     tournamentId: string,
     matchId: string,
     payload: MatchTimerPayload
   ): Promise<Tournament> {
-    return request<Tournament>(`/tournaments/${tournamentId}/matches/${matchId}/timer`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload)
-    })
+    return normalizeTournament(
+      await request<Tournament>(`/tournaments/${tournamentId}/matches/${matchId}/timer`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })
+    )
   },
   async deleteTournament(tournamentId: string): Promise<void> {
     await request<void>(`/tournaments/${tournamentId}`, { method: 'DELETE' })

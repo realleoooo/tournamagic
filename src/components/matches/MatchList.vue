@@ -263,10 +263,14 @@ onBeforeUnmount(() => {
 
         <div style="display:grid; gap:0.4rem; margin-top:0.8rem;">
           <strong>
-            Timer: {{ formatSeconds(currentDisplaySeconds(match)) }}
+            Game Timer: {{ formatSeconds(currentDisplaySeconds(match)) }}
             <span v-if="match.timerDirection === 'down'">remaining</span>
             <span v-else>elapsed</span>
           </strong>
+          <p style="margin:0; color:var(--text-soft);">
+            Notification every {{ Math.max(1, Math.floor(match.timerNotifyIntervalSeconds / 60)) }} min ·
+            Next reminder at {{ formatSeconds(match.nextNotificationAtSeconds) }} elapsed
+          </p>
           <div style="display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center;">
             <label>
               Direction
@@ -287,8 +291,8 @@ onBeforeUnmount(() => {
           </div>
 
           <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-            <button type="button" @click="startTimer(match)">{{ match.timerRunning ? 'Restart' : 'Start' }}</button>
-            <button type="button" class="secondary" @click="pauseTimer(match)">Pause</button>
+            <button type="button" @click="startTimer(match)">{{ match.timerRunning ? 'Restart game' : 'Start game' }}</button>
+            <button type="button" class="secondary" @click="pauseTimer(match)">Pause game</button>
             <button type="button" class="secondary" @click="resetTimer(match)">Reset to 0</button>
           </div>
         </div>
