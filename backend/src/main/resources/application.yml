@@ -1,17 +1,8 @@
-spring:
-  datasource:
-    url: jdbc:h2:file:./backend/data/tournamagic;AUTO_SERVER=TRUE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        format_sql: true
-  flyway:
-    enabled: true
-
 server:
   port: 8080
+
+supabase:
+  rest-url: ${SUPABASE_REST_URL:http://supabase-rest:3000}
+  auth-url: ${SUPABASE_AUTH_URL:http://supabase-auth:9999}
+  anon-key: ${SUPABASE_ANON_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzczNjc0Mzc3LCJleHAiOjE4OTM0NTYwMDB9.xRVpTmafXhrwCWIxIETreQV77niiKFhjbPs8OtEqrgQ}
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzM2NzQzNzcsImV4cCI6MTg5MzQ1NjAwMH0.qKzwz5I6lAUDbmsxuDjDeGx9kJR2Ka7QyRjkpd6L6e0}

@@ -18,39 +18,44 @@ public class TournamentController {
     }
 
     @GetMapping
-    public List<TournamentSummaryDto> listTournaments() {
-        return tournamentService.listTournaments();
+    public List<TournamentSummaryDto> listTournaments(@RequestHeader("Authorization") String authorization) {
+        return tournamentService.listTournaments(token(authorization));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TournamentDto createTournament(@Valid @RequestBody CreateTournamentRequest request) {
-        return tournamentService.createTournament(request);
+    public TournamentDto createTournament(@RequestHeader("Authorization") String authorization, @Valid @RequestBody CreateTournamentRequest request) {
+        return tournamentService.createTournament(token(authorization), request);
     }
 
     @GetMapping("/{id}")
-    public TournamentDto getTournament(@PathVariable String id) {
-        return tournamentService.getTournament(id);
+    public TournamentDto getTournament(@RequestHeader("Authorization") String authorization, @PathVariable String id) {
+        return tournamentService.getTournament(token(authorization), id);
     }
 
     @GetMapping("/{id}/standings")
-    public List<StandingDto> standings(@PathVariable String id) {
-        return tournamentService.standings(id);
+    public List<StandingDto> standings(@RequestHeader("Authorization") String authorization, @PathVariable String id) {
+        return tournamentService.standings(token(authorization), id);
     }
 
     @PutMapping("/{id}/matches/{matchId}")
-    public TournamentDto submitMatch(@PathVariable String id, @PathVariable String matchId, @RequestBody UpdateMatchRequest request) {
-        return tournamentService.updateMatchResult(id, matchId, request);
+    public TournamentDto submitMatch(@RequestHeader("Authorization") String authorization, @PathVariable String id, @PathVariable String matchId, @RequestBody UpdateMatchRequest request) {
+        return tournamentService.updateMatchResult(token(authorization), id, matchId, request);
     }
 
     @DeleteMapping("/{id}/matches/{matchId}")
-    public TournamentDto clearMatch(@PathVariable String id, @PathVariable String matchId) {
-        return tournamentService.clearMatchResult(id, matchId);
+    public TournamentDto clearMatch(@RequestHeader("Authorization") String authorization, @PathVariable String id, @PathVariable String matchId) {
+        return tournamentService.clearMatchResult(token(authorization), id, matchId);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteTournament(@PathVariable String id) {
-        tournamentService.deleteTournament(id);
+    public void deleteTournament(@RequestHeader("Authorization") String authorization, @PathVariable String id) {
+        tournamentService.deleteTournament(token(authorization), id);
+    }
+
+    private String token(String authorization) {
+        if (authorization == null) return "";
+        return authorization.replaceFirst("^Bearer\\s+", "").trim();
     }
 }

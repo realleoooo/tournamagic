@@ -1,13 +1,9 @@
 package com.tournamagic.service;
 
-import com.tournamagic.domain.MatchEntity;
-import com.tournamagic.domain.PlayerEntity;
-import com.tournamagic.domain.TournamentEntity;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.tournamagic.auth.AuthService;
 import com.tournamagic.dto.*;
-import com.tournamagic.repo.MatchRepository;
-import com.tournamagic.repo.PlayerRepository;
-import com.tournamagic.repo.TournamentRepository;
-import jakarta.transaction.Transactional;
+import com.tournamagic.supabase.SupabaseClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,140 +14,149 @@ import java.util.stream.Collectors;
 
 @Service
 public class TournamentService {
-    private final TournamentRepository tournamentRepository;
-    private final PlayerRepository playerRepository;
-    private final MatchRepository matchRepository;
+    private final SupabaseClient supabaseClient;
+    private final AuthService authService;
 
-    public TournamentService(TournamentRepository tournamentRepository, PlayerRepository playerRepository, MatchRepository matchRepository) {
-        this.tournamentRepository = tournamentRepository;
-        this.playerRepository = playerRepository;
-        this.matchRepository = matchRepository;
+    public TournamentService(SupabaseClient supabaseClient, AuthService authService) {
+        this.supabaseClient = supabaseClient;
+        this.authService = authService;
     }
 
-    @Transactional
-    public TournamentDto createTournament(CreateTournamentRequest request) {
+    public TournamentDto createTournament(String accessToken, CreateTournamentRequest request) {
         validatePlayers(request.players());
+        String userId = authService.requireUserId(accessToken);
 
-        TournamentEntity tournament = new TournamentEntity();
-        tournament.setId(UUID.randomUUID().toString());
-        tournament.setName(request.name().trim());
-        tournament.setStatus("active");
-        tournament.setCreatedAt(Instant.now());
-        tournamentRepository.save(tournament);
+        String tournamentId = UUID.randomUUID().toString();
+        Instant createdAt = Instant.now();
+        supabaseClient.insert("tournaments", List.of(Map.of(
+                "id", tournamentId,
+                "user_id", userId,
+                "name", request.name().trim(),
+                "status", "active",
+                "created_at", createdAt.toString()
+        )));
 
-        List<PlayerEntity> players = request.players().stream().map(name -> {
-            PlayerEntity p = new PlayerEntity();
-            p.setId(UUID.randomUUID().toString());
-            p.setTournamentId(tournament.getId());
-            p.setName(name.trim());
-            return p;
-        }).toList();
-        playerRepository.saveAll(players);
+        List<Map<String, Object>> playerRows = request.players().stream().map(name -> Map.<String, Object>of(
+                "id", UUID.randomUUID().toString(),
+                "tournament_id", tournamentId,
+                "name", name.trim()
+        )).toList();
+        supabaseClient.insert("players", playerRows);
 
-        List<MatchEntity> matches = createRoundRobinMatches(tournament.getId(), players);
-        matchRepository.saveAll(matches);
+        List<PlayerDto> players = playerRows.stream()
+                .map(row -> new PlayerDto(row.get("id").toString(), row.get("name").toString()))
+                .toList();
 
-        return toDto(tournament, players, matches);
+        List<Map<String, Object>> matchRows = createRoundRobinMatches(tournamentId, players);
+        supabaseClient.insert("matches", matchRows);
+
+        List<MatchDto> matches = matchRows.stream().map(this::mapMatch).toList();
+        return new TournamentDto(tournamentId, request.name().trim(), createdAt, "active", players, matches);
     }
 
-    public List<TournamentSummaryDto> listTournaments() {
-        List<TournamentEntity> tournaments = tournamentRepository.findAll();
-        return tournaments.stream().map(tournament -> {
-            List<PlayerEntity> players = playerRepository.findByTournamentId(tournament.getId());
-            List<MatchEntity> matches = matchRepository.findByTournamentId(tournament.getId());
-            int completed = (int) matches.stream().filter(m -> "completed".equals(m.getStatus())).count();
-            return new TournamentSummaryDto(
-                    tournament.getId(),
-                    tournament.getName(),
-                    tournament.getStatus(),
-                    tournament.getCreatedAt(),
+    public List<TournamentSummaryDto> listTournaments(String accessToken) {
+        String userId = authService.requireUserId(accessToken);
+        JsonNode tournaments = supabaseClient.select("tournaments", Map.of("user_id", "eq." + userId), "*");
+        List<TournamentSummaryDto> out = new ArrayList<>();
+        for (JsonNode t : tournaments) {
+            String tournamentId = t.get("id").asText();
+            JsonNode players = supabaseClient.select("players", Map.of("tournament_id", "eq." + tournamentId), "id");
+            JsonNode matches = supabaseClient.select("matches", Map.of("tournament_id", "eq." + tournamentId), "status");
+            int completed = 0;
+            for (JsonNode m : matches) {
+                if ("completed".equals(m.path("status").asText())) completed++;
+            }
+            out.add(new TournamentSummaryDto(
+                    tournamentId,
+                    t.path("name").asText(),
+                    t.path("status").asText(),
+                    Instant.parse(t.path("created_at").asText()),
                     players.size(),
                     completed,
                     matches.size()
-            );
-        }).sorted((a, b) -> b.createdAt().compareTo(a.createdAt())).toList();
+            ));
+        }
+        return out.stream().sorted((a, b) -> b.createdAt().compareTo(a.createdAt())).toList();
     }
 
-    public TournamentDto getTournament(String id) {
-        TournamentEntity tournament = tournamentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
-        List<PlayerEntity> players = playerRepository.findByTournamentId(id);
-        List<MatchEntity> matches = matchRepository.findByTournamentId(id);
-        return toDto(tournament, players, matches);
+    public TournamentDto getTournament(String accessToken, String id) {
+        String userId = authService.requireUserId(accessToken);
+        JsonNode tournaments = supabaseClient.select("tournaments", Map.of("id", "eq." + id, "user_id", "eq." + userId), "*");
+        if (tournaments.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found");
+        }
+        JsonNode tournament = tournaments.get(0);
+        List<PlayerDto> players = loadPlayers(id);
+        List<MatchDto> matches = loadMatches(id);
+        return new TournamentDto(
+                id,
+                tournament.path("name").asText(),
+                Instant.parse(tournament.path("created_at").asText()),
+                tournament.path("status").asText(),
+                players,
+                matches
+        );
     }
 
-    @Transactional
-    public TournamentDto updateMatchResult(String tournamentId, String matchId, UpdateMatchRequest request) {
+    public TournamentDto updateMatchResult(String accessToken, String tournamentId, String matchId, UpdateMatchRequest request) {
         if (!isValidBo3(request.winsA(), request.winsB())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Bo3 result. Use 2-0 or 2-1.");
         }
-
-        TournamentEntity tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
-        MatchEntity match = matchRepository.findById(matchId)
-                .filter(m -> m.getTournamentId().equals(tournamentId))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
-
-        match.setWinsA(request.winsA());
-        match.setWinsB(request.winsB());
-        match.setStatus("completed");
-        match.setWinnerId(request.winsA() > request.winsB() ? match.getPlayerAId() : match.getPlayerBId());
-        matchRepository.save(match);
-
-        boolean allCompleted = matchRepository.findByTournamentId(tournamentId).stream()
-                .allMatch(m -> "completed".equals(m.getStatus()));
-        tournament.setStatus(allCompleted ? "complete" : "active");
-        tournamentRepository.save(tournament);
-
-        return getTournament(tournamentId);
-    }
-
-    @Transactional
-    public TournamentDto clearMatchResult(String tournamentId, String matchId) {
-        TournamentEntity tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
-        MatchEntity match = matchRepository.findById(matchId)
-                .filter(m -> m.getTournamentId().equals(tournamentId))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
-
-        match.setStatus("pending");
-        match.setWinsA(0);
-        match.setWinsB(0);
-        match.setWinnerId(null);
-        matchRepository.save(match);
-
-        tournament.setStatus("active");
-        tournamentRepository.save(tournament);
-
-        return getTournament(tournamentId);
-    }
-
-    @Transactional
-    public void deleteTournament(String tournamentId) {
-        if (!tournamentRepository.existsById(tournamentId)) {
-            return;
+        getTournament(accessToken, tournamentId);
+        JsonNode matchRows = supabaseClient.update("matches", Map.of("id", "eq." + matchId, "tournament_id", "eq." + tournamentId), Map.of(
+                "wins_a", request.winsA(),
+                "wins_b", request.winsB(),
+                "status", "completed"
+        ));
+        if (matchRows.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found");
         }
-        matchRepository.deleteByTournamentId(tournamentId);
-        playerRepository.deleteByTournamentId(tournamentId);
-        tournamentRepository.deleteById(tournamentId);
+        JsonNode updated = matchRows.get(0);
+        String winnerId = request.winsA() > request.winsB() ? updated.path("player_a_id").asText() : updated.path("player_b_id").asText();
+        supabaseClient.update("matches", Map.of("id", "eq." + matchId), Map.of("winner_id", winnerId));
+        refreshTournamentStatus(tournamentId);
+        return getTournament(accessToken, tournamentId);
     }
 
-    public List<StandingDto> standings(String tournamentId) {
-        List<PlayerEntity> players = playerRepository.findByTournamentId(tournamentId);
-        List<MatchEntity> matches = matchRepository.findByTournamentId(tournamentId);
+    public TournamentDto clearMatchResult(String accessToken, String tournamentId, String matchId) {
+        getTournament(accessToken, tournamentId);
+        JsonNode rows = supabaseClient.update("matches", Map.of("id", "eq." + matchId, "tournament_id", "eq." + tournamentId), Map.of(
+                "status", "pending",
+                "wins_a", 0,
+                "wins_b", 0,
+                "winner_id", null
+        ));
+        if (rows.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found");
+        }
+        supabaseClient.update("tournaments", Map.of("id", "eq." + tournamentId), Map.of("status", "active"));
+        return getTournament(accessToken, tournamentId);
+    }
 
-        Map<String, StandingDtoBuilder> rows = new HashMap<>();
-        players.forEach(p -> rows.put(p.getId(), new StandingDtoBuilder(p.getId(), p.getName())));
+    public void deleteTournament(String accessToken, String id) {
+        getTournament(accessToken, id);
+        supabaseClient.delete("matches", Map.of("tournament_id", "eq." + id));
+        supabaseClient.delete("players", Map.of("tournament_id", "eq." + id));
+        supabaseClient.delete("tournaments", Map.of("id", "eq." + id));
+    }
 
-        for (MatchEntity match : matches) {
-            if (!"completed".equals(match.getStatus()) || match.getWinnerId() == null) continue;
-            StandingDtoBuilder a = rows.get(match.getPlayerAId());
-            StandingDtoBuilder b = rows.get(match.getPlayerBId());
-            a.gameWins += match.getWinsA();
-            a.gameLosses += match.getWinsB();
-            b.gameWins += match.getWinsB();
-            b.gameLosses += match.getWinsA();
-            if (match.getWinnerId().equals(match.getPlayerAId())) {
+    public List<StandingDto> standings(String accessToken, String tournamentId) {
+        getTournament(accessToken, tournamentId);
+        List<PlayerDto> players = loadPlayers(tournamentId);
+        List<MatchDto> matches = loadMatches(tournamentId);
+
+        Map<String, StandingDtoBuilder> rows = new LinkedHashMap<>();
+        players.forEach(player -> rows.put(player.id(), new StandingDtoBuilder(player.id(), player.name())));
+
+        for (MatchDto match : matches) {
+            if (!"completed".equals(match.status()) || match.winnerId() == null) continue;
+            StandingDtoBuilder a = rows.get(match.playerAId());
+            StandingDtoBuilder b = rows.get(match.playerBId());
+            a.gameWins += match.winsA();
+            a.gameLosses += match.winsB();
+            b.gameWins += match.winsB();
+            b.gameLosses += match.winsA();
+            if (match.winnerId().equals(match.playerAId())) {
                 a.matchWins++;
                 b.matchLosses++;
             } else {
@@ -170,19 +175,69 @@ public class TournamentService {
         return standings;
     }
 
-    private List<MatchEntity> createRoundRobinMatches(String tournamentId, List<PlayerEntity> players) {
-        List<MatchEntity> matches = new ArrayList<>();
+    private void refreshTournamentStatus(String tournamentId) {
+        JsonNode matches = supabaseClient.select("matches", Map.of("tournament_id", "eq." + tournamentId), "status");
+        boolean allCompleted = matches.size() > 0;
+        for (JsonNode match : matches) {
+            if (!"completed".equals(match.path("status").asText())) {
+                allCompleted = false;
+                break;
+            }
+        }
+        supabaseClient.update("tournaments", Map.of("id", "eq." + tournamentId), Map.of("status", allCompleted ? "complete" : "active"));
+    }
+
+    private List<PlayerDto> loadPlayers(String tournamentId) {
+        JsonNode players = supabaseClient.select("players", Map.of("tournament_id", "eq." + tournamentId), "*");
+        List<PlayerDto> out = new ArrayList<>();
+        for (JsonNode p : players) {
+            out.add(new PlayerDto(p.path("id").asText(), p.path("name").asText()));
+        }
+        return out;
+    }
+
+    private List<MatchDto> loadMatches(String tournamentId) {
+        JsonNode matches = supabaseClient.select("matches", Map.of("tournament_id", "eq." + tournamentId), "*");
+        List<MatchDto> out = new ArrayList<>();
+        for (JsonNode m : matches) {
+            out.add(new MatchDto(
+                    m.path("id").asText(),
+                    m.path("player_a_id").asText(),
+                    m.path("player_b_id").asText(),
+                    m.path("status").asText(),
+                    m.path("wins_a").asInt(0),
+                    m.path("wins_b").asInt(0),
+                    m.path("winner_id").isNull() ? null : m.path("winner_id").asText()
+            ));
+        }
+        return out;
+    }
+
+    private MatchDto mapMatch(Map<String, Object> row) {
+        return new MatchDto(
+                row.get("id").toString(),
+                row.get("player_a_id").toString(),
+                row.get("player_b_id").toString(),
+                row.get("status").toString(),
+                (int) row.get("wins_a"),
+                (int) row.get("wins_b"),
+                null
+        );
+    }
+
+    private List<Map<String, Object>> createRoundRobinMatches(String tournamentId, List<PlayerDto> players) {
+        List<Map<String, Object>> matches = new ArrayList<>();
         for (int i = 0; i < players.size(); i++) {
             for (int j = i + 1; j < players.size(); j++) {
-                MatchEntity match = new MatchEntity();
-                match.setId(UUID.randomUUID().toString());
-                match.setTournamentId(tournamentId);
-                match.setPlayerAId(players.get(i).getId());
-                match.setPlayerBId(players.get(j).getId());
-                match.setStatus("pending");
-                match.setWinsA(0);
-                match.setWinsB(0);
-                matches.add(match);
+                matches.add(Map.of(
+                        "id", UUID.randomUUID().toString(),
+                        "tournament_id", tournamentId,
+                        "player_a_id", players.get(i).id(),
+                        "player_b_id", players.get(j).id(),
+                        "status", "pending",
+                        "wins_a", 0,
+                        "wins_b", 0
+                ));
             }
         }
         return matches;
@@ -201,22 +256,6 @@ public class TournamentService {
     private boolean isValidBo3(int winsA, int winsB) {
         int total = winsA + winsB;
         return (winsA == 2 || winsB == 2) && total >= 2 && total <= 3;
-    }
-
-    private TournamentDto toDto(TournamentEntity tournament, List<PlayerEntity> players, List<MatchEntity> matches) {
-        List<PlayerDto> playerDtos = players.stream().map(p -> new PlayerDto(p.getId(), p.getName())).toList();
-        List<MatchDto> matchDtos = matches.stream().map(m -> new MatchDto(
-                m.getId(), m.getPlayerAId(), m.getPlayerBId(), m.getStatus(), m.getWinsA(), m.getWinsB(), m.getWinnerId()
-        )).toList();
-
-        return new TournamentDto(
-                tournament.getId(),
-                tournament.getName(),
-                tournament.getCreatedAt(),
-                tournament.getStatus(),
-                playerDtos,
-                matchDtos
-        );
     }
 
     private static class StandingDtoBuilder {
