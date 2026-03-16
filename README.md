@@ -2,42 +2,52 @@
 
 Magic: The Gathering draft tournament tracker with Vue 3 + Vite frontend and Spring Boot backend.
 
-## Implemented phases
-- **Phase 1:** Frontend foundation (Vue/Vite/TS, Pinia, Router, MTG-themed UI tokens).
-- **Phase 2:** Tournament domain logic (round-robin pairings, Bo3 validation, ranking).
-- **Phase 3:** Complete tournament UX (setup, leaderboard, progress, results, filters, undo).
-- **Phase 4:** Spring Boot REST backend + persistence (H2 + Flyway), frontend API integration.
-- **Phase 5:** Dockerized full stack (`docker-compose`) for one-command startup.
-- **Phase 6:** Hardening/QA baseline via backend integration tests, frontend domain tests, error/loading states.
+## Auth status
+- Email/password auth is enabled.
+- Google login is enabled.
+- Apple login has been removed for now to keep local setup simple.
 
-## Local development
-### Backend
+## Quick start
+### 1) Configure environment
+Frontend:
+```bash
+cp .env.example .env
+```
+Set in `.env`:
+- `VITE_API_BASE_URL=/api`
+- `VITE_GOOGLE_CLIENT_ID=...apps.googleusercontent.com`
+
+Backend (shell env or file):
+- `AUTH_GOOGLE_CLIENT_ID=...apps.googleusercontent.com`
+- `AUTH_SESSION_TTL_HOURS=168` (optional)
+
+### 2) Start backend
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-### Frontend
+### 3) Start frontend
 ```bash
 npm install
 npm run dev
 ```
 
-Frontend runs on `http://localhost:5174` and calls backend via `/api` proxy to `http://localhost:8080`.
+Open `http://localhost:5174`.
 
-## Docker (no local npm/java needed)
-```bash
-docker compose up --build
-```
-
-Then open:
-- App: `http://localhost:5174`
-- API: `http://localhost:8080/api/tournaments`
+## Full local setup guide
+See `docs/local-setup.md` for:
+- dependency installation
+- Google Cloud Console setup
+- env variables
+- login testing steps
+- troubleshooting
 
 ## Testing
 ### Frontend
 ```bash
 npm test
+npm run build
 ```
 
 ### Backend
@@ -45,10 +55,3 @@ npm test
 cd backend
 mvn test
 ```
-
-## 431 troubleshooting (Vite dev server)
-If you see `431 Request Header Fields Too Large` on localhost:
-1. Open in private/incognito mode.
-2. Clear localhost cookies/site data.
-3. Try another port: `npm run dev -- --port 5174`.
-4. Disable browser extensions that inject headers.

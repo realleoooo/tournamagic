@@ -1,4 +1,5 @@
 import type { Tournament } from '@/domain/models'
+import { getAuthToken } from '@/utils/authSession'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 const ID_KEY = 'tournamagic.tournamentId'
@@ -26,10 +27,12 @@ const writeId = (id?: string) => {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getAuthToken()
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {})
     }
   })
