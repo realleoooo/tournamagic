@@ -102,3 +102,14 @@ Open app at:
 - Confirm frontend is on `http://localhost:5174`.
 - Confirm backend is running and token exists after login.
 - If token is stale, log out and log in again.
+
+
+### Docker build fails with Maven `Tag mismatch`
+This is typically a transient network/download corruption issue while fetching Maven artifacts.
+
+Try:
+```bash
+docker compose build --no-cache backend
+```
+
+The backend Dockerfile now retries Maven dependency resolution/package automatically and clears the known problematic byte-buddy cache between attempts.

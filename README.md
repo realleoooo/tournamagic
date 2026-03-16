@@ -55,3 +55,13 @@ npm run build
 cd backend
 mvn test
 ```
+
+
+## Docker troubleshooting
+If backend image build fails with Maven dependency transfer errors (for example `Tag mismatch`), rebuild backend without cache:
+
+```bash
+docker compose build --no-cache backend
+```
+
+The backend Dockerfile includes retry logic for transient Maven download failures.
