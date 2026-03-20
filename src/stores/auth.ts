@@ -1,16 +1,13 @@
 import { defineStore } from 'pinia'
+import { AUTH_SESSION_STORAGE_KEY, getStoredAuthSession, type AuthSessionUser } from '@/api/authSession'
 
-export type AuthUser = {
-  name: string
-  email: string
-}
+export type AuthUser = AuthSessionUser
 
 type StoredUser = AuthUser & {
   password: string
 }
 
 const AUTH_USERS_STORAGE_KEY = 'tournamagic.auth.users'
-const AUTH_SESSION_STORAGE_KEY = 'tournamagic.auth.session'
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase()
 
@@ -32,7 +29,7 @@ const saveUsers = (users: StoredUser[]) => {
   window.localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(users))
 }
 
-const loadSession = (): AuthUser | null => safeParse<AuthUser | null>(window.localStorage.getItem(AUTH_SESSION_STORAGE_KEY), null)
+const loadSession = (): AuthUser | null => getStoredAuthSession()
 
 const saveSession = (user: AuthUser | null) => {
   if (!user) {

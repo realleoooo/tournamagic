@@ -15,6 +15,12 @@ export interface Match {
   winnerId?: string
 }
 
+export interface TournamentParticipant {
+  email: string
+  name: string
+  joinedAt: string
+}
+
 export interface Tournament {
   id: string
   name: string
@@ -22,6 +28,20 @@ export interface Tournament {
   players: Player[]
   matches: Match[]
   status: 'setup' | 'active' | 'complete'
+  joinCode: string
+  joinEnabled: boolean
+  joinCodeExpiresAt?: string | null
+  participants: TournamentParticipant[]
+  currentUserJoined: boolean
+}
+
+export interface JoinTournamentPreview {
+  tournamentId: string
+  tournamentName: string
+  joinCode: string
+  status: Tournament['status']
+  joinEnabled: boolean
+  joinCodeExpiresAt?: string | null
 }
 
 export interface StandingRow {

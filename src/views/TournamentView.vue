@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import MatchList from '@/components/matches/MatchList.vue'
 import LeaderboardTable from '@/components/leaderboard/LeaderboardTable.vue'
 import ProgressPanel from '@/components/shared/ProgressPanel.vue'
+import InviteShareSection from '@/components/tournaments/InviteShareSection.vue'
 import { useTournamentStore } from '@/stores/tournament'
 
 const store = useTournamentStore()
 const router = useRouter()
+const joinMessage = ref('')
 
 const tournament = computed(() => store.tournament)
 
@@ -30,6 +32,18 @@ const onReset = async () => {
   await store.resetTournament()
   router.replace('/')
 }
+
+const joinCurrentTournament = async () => {
+  if (!tournament.value) {
+    return
+  }
+
+  joinMessage.value = ''
+  const joined = await store.joinTournament(tournament.value.joinCode)
+  if (joined) {
+    joinMessage.value = 'You are now on the participant list for this tournament.'
+  }
+}
 </script>
 
 <template>
@@ -44,12 +58,25 @@ const onReset = async () => {
       <div class="grid">
         <section class="card">
           <h2>{{ tournament.name }}</h2>
-          <p>{{ tournament.players.length }} players</p>
-          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <p>{{ tournament.players.length }} players · {{ tournament.participants.length }} joined friends</p>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom: 0.75rem;">
             <button type="button" class="secondary" @click="goOverview">Back to overview</button>
             <button class="warn" type="button" @click="onReset">Reset Tournament</button>
+            <button
+              v-if="!tournament.currentUserJoined && tournament.joinEnabled && tournament.status !== 'complete'"
+              type="button"
+              @click="joinCurrentTournament"
+            >
+              Join this tournament
+            </button>
           </div>
+          <p v-if="tournament.currentUserJoined" class="success">You have joined this tournament with your account.</p>
+          <p v-else-if="joinMessage" class="success">{{ joinMessage }}</p>
+          <p v-if="!tournament.joinEnabled || tournament.status === 'complete'" class="error">
+            This tournament is closed to new participants.
+          </p>
         </section>
+        <InviteShareSection :tournament="tournament" />
         <ProgressPanel :completed="store.completion.completed" :total="store.completion.total" />
         <MatchList
           :matches="tournament.matches"
@@ -60,6 +87,20 @@ const onReset = async () => {
         />
       </div>
       <div class="grid">
+        <section class="card">
+          <h2>Joined Participants</h2>
+          <p class="muted">Friends who joined with an account appear here.</p>
+          <ul v-if="tournament.participants.length > 0" class="participant-list">
+            <li v-for="participant in tournament.participants" :key="participant.email" class="participant-list__item">
+              <div>
+                <strong>{{ participant.name }}</strong>
+                <p>{{ participant.email }}</p>
+              </div>
+              <span>{{ new Date(participant.joinedAt).toLocaleDateString() }}</span>
+            </li>
+          </ul>
+          <p v-else class="muted">No one has joined this tournament yet.</p>
+        </section>
         <LeaderboardTable :standings="store.standings" />
         <section class="card">
           <h2>Remaining Opponents</h2>
@@ -74,3 +115,41 @@ const onReset = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.success {
+  margin: 0;
+  color: var(--success);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+}
+
+.muted {
+  color: var(--text-soft);
+}
+
+.participant-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.participant-list__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-main) 45%, transparent);
+}
+
+.participant-list__item p {
+  margin: 0.25rem 0 0;
+  color: var(--text-soft);
+}
+</style>

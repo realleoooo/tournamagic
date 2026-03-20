@@ -1,4 +1,5 @@
-import type { Tournament } from '@/domain/models'
+import type { JoinTournamentPreview, Tournament } from '@/domain/models'
+import { getAuthHeaders } from '@/api/authSession'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 const ID_KEY = 'tournamagic.tournamentId'
@@ -15,6 +16,7 @@ export type TournamentSummary = {
 
 type CreateTournamentPayload = { name: string; players: string[] }
 type MatchPayload = { winsA: number; winsB: number }
+type JoinTournamentPayload = { code: string }
 
 const readId = () => window.localStorage.getItem(ID_KEY) ?? undefined
 const writeId = (id?: string) => {
@@ -30,6 +32,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
       ...(init?.headers ?? {})
     }
   })
@@ -62,6 +65,17 @@ export const tournamentApi = {
   },
   async fetchTournament(id: string): Promise<Tournament> {
     return request<Tournament>(`/tournaments/${id}`)
+  },
+  async previewJoin(code: string): Promise<JoinTournamentPreview> {
+    return request<JoinTournamentPreview>(`/tournaments/join/${encodeURIComponent(code)}`)
+  },
+  async joinTournament(payload: JoinTournamentPayload): Promise<Tournament> {
+    const tournament = await request<Tournament>('/tournaments/join', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+    writeId(tournament.id)
+    return tournament
   },
   async submitResult(tournamentId: string, matchId: string, payload: MatchPayload): Promise<Tournament> {
     return request<Tournament>(`/tournaments/${tournamentId}/matches/${matchId}`, {

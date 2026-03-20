@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { buildStandings } from '@/domain/ranking'
-import type { Tournament } from '@/domain/models'
+import type { JoinTournamentPreview, Tournament } from '@/domain/models'
 import { tournamentApi, type TournamentSummary } from '@/api/tournamentApi'
 
 export const useTournamentStore = defineStore('tournament', () => {
   const tournament = ref<Tournament | undefined>(undefined)
   const tournaments = ref<TournamentSummary[]>([])
+  const joinPreview = ref<JoinTournamentPreview | undefined>(undefined)
   const loading = ref(false)
   const error = ref<string | undefined>(undefined)
 
@@ -74,6 +75,25 @@ export const useTournamentStore = defineStore('tournament', () => {
     return created
   }
 
+  const previewJoin = async (code: string) => {
+    joinPreview.value = undefined
+    const preview = await withLoading(() => tournamentApi.previewJoin(code))
+    if (preview) {
+      joinPreview.value = preview
+    }
+    return preview
+  }
+
+  const joinTournament = async (code: string) => {
+    const joined = await withLoading(() => tournamentApi.joinTournament({ code }))
+    if (joined) {
+      tournament.value = joined
+      joinPreview.value = undefined
+      await refreshTournamentList()
+    }
+    return joined
+  }
+
   const submitResult = async (matchId: string, winsA: number, winsB: number) => {
     if (!tournament.value) return
     const updated = await withLoading(() =>
@@ -96,6 +116,10 @@ export const useTournamentStore = defineStore('tournament', () => {
 
   const leaveTournament = () => {
     tournament.value = undefined
+  }
+
+  const clearJoinPreview = () => {
+    joinPreview.value = undefined
   }
 
   const resetTournament = async () => {
@@ -129,6 +153,7 @@ export const useTournamentStore = defineStore('tournament', () => {
   return {
     tournament,
     tournaments,
+    joinPreview,
     loading,
     error,
     standings,
@@ -137,9 +162,12 @@ export const useTournamentStore = defineStore('tournament', () => {
     refreshTournamentList,
     openTournament,
     createTournament,
+    previewJoin,
+    joinTournament,
     submitResult,
     clearResult,
     leaveTournament,
+    clearJoinPreview,
     resetTournament,
     deleteFromList,
     resolveName,

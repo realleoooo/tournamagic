@@ -3,40 +3,59 @@ package com.tournamagic.service;
 import com.tournamagic.domain.MatchEntity;
 import com.tournamagic.domain.PlayerEntity;
 import com.tournamagic.domain.TournamentEntity;
+import com.tournamagic.domain.TournamentParticipantEntity;
 import com.tournamagic.dto.*;
 import com.tournamagic.repo.MatchRepository;
 import com.tournamagic.repo.PlayerRepository;
+import com.tournamagic.repo.TournamentParticipantRepository;
 import com.tournamagic.repo.TournamentRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class TournamentService {
+    private static final String ACTIVE_STATUS = "active";
+    private static final String COMPLETE_STATUS = "complete";
+    private static final String JOIN_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final int JOIN_CODE_LENGTH = 8;
+
     private final TournamentRepository tournamentRepository;
     private final PlayerRepository playerRepository;
     private final MatchRepository matchRepository;
+    private final TournamentParticipantRepository tournamentParticipantRepository;
+    private final SecureRandom secureRandom = new SecureRandom();
 
-    public TournamentService(TournamentRepository tournamentRepository, PlayerRepository playerRepository, MatchRepository matchRepository) {
+    public TournamentService(
+            TournamentRepository tournamentRepository,
+            PlayerRepository playerRepository,
+            MatchRepository matchRepository,
+            TournamentParticipantRepository tournamentParticipantRepository
+    ) {
         this.tournamentRepository = tournamentRepository;
         this.playerRepository = playerRepository;
         this.matchRepository = matchRepository;
+        this.tournamentParticipantRepository = tournamentParticipantRepository;
     }
 
     @Transactional
-    public TournamentDto createTournament(CreateTournamentRequest request) {
+    public TournamentDto createTournament(CreateTournamentRequest request, AuthenticatedUser currentUser) {
         validatePlayers(request.players());
 
         TournamentEntity tournament = new TournamentEntity();
         tournament.setId(UUID.randomUUID().toString());
         tournament.setName(request.name().trim());
-        tournament.setStatus("active");
+        tournament.setStatus(ACTIVE_STATUS);
         tournament.setCreatedAt(Instant.now());
+        tournament.setJoinCode(generateJoinCode());
+        tournament.setJoinEnabled(true);
+        tournament.setJoinCodeExpiresAt(null);
         tournamentRepository.save(tournament);
 
         List<PlayerEntity> players = request.players().stream().map(name -> {
@@ -51,7 +70,11 @@ public class TournamentService {
         List<MatchEntity> matches = createRoundRobinMatches(tournament.getId(), players);
         matchRepository.saveAll(matches);
 
-        return toDto(tournament, players, matches);
+        if (currentUser != null) {
+            addParticipantIfMissing(tournament, currentUser);
+        }
+
+        return getTournament(tournament.getId(), currentUser);
     }
 
     public List<TournamentSummaryDto> listTournaments() {
@@ -72,16 +95,37 @@ public class TournamentService {
         }).sorted((a, b) -> b.createdAt().compareTo(a.createdAt())).toList();
     }
 
-    public TournamentDto getTournament(String id) {
+    public TournamentDto getTournament(String id, AuthenticatedUser currentUser) {
         TournamentEntity tournament = tournamentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
         List<PlayerEntity> players = playerRepository.findByTournamentId(id);
         List<MatchEntity> matches = matchRepository.findByTournamentId(id);
-        return toDto(tournament, players, matches);
+        List<TournamentParticipantEntity> participants = tournamentParticipantRepository.findByTournamentIdOrderByJoinedAtAsc(id);
+        return toDto(tournament, players, matches, participants, currentUser);
+    }
+
+    public JoinTournamentPreviewDto previewJoin(String code) {
+        TournamentEntity tournament = findTournamentByCode(code);
+        return new JoinTournamentPreviewDto(
+                tournament.getId(),
+                tournament.getName(),
+                tournament.getJoinCode(),
+                tournament.getStatus(),
+                tournament.isJoinEnabled(),
+                tournament.getJoinCodeExpiresAt()
+        );
     }
 
     @Transactional
-    public TournamentDto updateMatchResult(String tournamentId, String matchId, UpdateMatchRequest request) {
+    public TournamentDto joinTournament(String code, AuthenticatedUser currentUser) {
+        TournamentEntity tournament = findTournamentByCode(code);
+        assertJoinable(tournament);
+        addParticipantIfMissing(tournament, currentUser);
+        return getTournament(tournament.getId(), currentUser);
+    }
+
+    @Transactional
+    public TournamentDto updateMatchResult(String tournamentId, String matchId, UpdateMatchRequest request, AuthenticatedUser currentUser) {
         if (!isValidBo3(request.winsA(), request.winsB())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Bo3 result. Use 2-0 or 2-1.");
         }
@@ -100,14 +144,14 @@ public class TournamentService {
 
         boolean allCompleted = matchRepository.findByTournamentId(tournamentId).stream()
                 .allMatch(m -> "completed".equals(m.getStatus()));
-        tournament.setStatus(allCompleted ? "complete" : "active");
+        tournament.setStatus(allCompleted ? COMPLETE_STATUS : ACTIVE_STATUS);
         tournamentRepository.save(tournament);
 
-        return getTournament(tournamentId);
+        return getTournament(tournamentId, currentUser);
     }
 
     @Transactional
-    public TournamentDto clearMatchResult(String tournamentId, String matchId) {
+    public TournamentDto clearMatchResult(String tournamentId, String matchId, AuthenticatedUser currentUser) {
         TournamentEntity tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
         MatchEntity match = matchRepository.findById(matchId)
@@ -120,10 +164,10 @@ public class TournamentService {
         match.setWinnerId(null);
         matchRepository.save(match);
 
-        tournament.setStatus("active");
+        tournament.setStatus(ACTIVE_STATUS);
         tournamentRepository.save(tournament);
 
-        return getTournament(tournamentId);
+        return getTournament(tournamentId, currentUser);
     }
 
     @Transactional
@@ -133,6 +177,7 @@ public class TournamentService {
         }
         matchRepository.deleteByTournamentId(tournamentId);
         playerRepository.deleteByTournamentId(tournamentId);
+        tournamentParticipantRepository.deleteByTournamentId(tournamentId);
         tournamentRepository.deleteById(tournamentId);
     }
 
@@ -170,6 +215,59 @@ public class TournamentService {
         return standings;
     }
 
+    private TournamentEntity findTournamentByCode(String rawCode) {
+        String normalizedCode = normalizeJoinCode(rawCode);
+        TournamentEntity tournament = tournamentRepository.findByJoinCode(normalizedCode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Join code is invalid."));
+        if (tournament.getJoinCodeExpiresAt() != null && tournament.getJoinCodeExpiresAt().isBefore(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Join code has expired.");
+        }
+        return tournament;
+    }
+
+    private void assertJoinable(TournamentEntity tournament) {
+        if (!tournament.isJoinEnabled()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Joining is disabled for this tournament.");
+        }
+        if (COMPLETE_STATUS.equals(tournament.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This tournament is closed and can no longer be joined.");
+        }
+    }
+
+    private void addParticipantIfMissing(TournamentEntity tournament, AuthenticatedUser currentUser) {
+        assertJoinable(tournament);
+
+        String email = currentUser.email().trim().toLowerCase();
+        if (tournamentParticipantRepository.findByTournamentIdAndUserEmail(tournament.getId(), email).isPresent()) {
+            return;
+        }
+
+        TournamentParticipantEntity participant = new TournamentParticipantEntity();
+        participant.setId(UUID.randomUUID().toString());
+        participant.setTournamentId(tournament.getId());
+        participant.setUserEmail(email);
+        participant.setUserName(currentUser.name().trim());
+        participant.setJoinedAt(Instant.now());
+        tournamentParticipantRepository.save(participant);
+    }
+
+    private String generateJoinCode() {
+        String generated;
+        do {
+            StringBuilder builder = new StringBuilder(JOIN_CODE_LENGTH);
+            for (int i = 0; i < JOIN_CODE_LENGTH; i++) {
+                int index = secureRandom.nextInt(JOIN_CODE_ALPHABET.length());
+                builder.append(JOIN_CODE_ALPHABET.charAt(index));
+            }
+            generated = builder.toString();
+        } while (tournamentRepository.existsByJoinCode(generated));
+        return generated;
+    }
+
+    private String normalizeJoinCode(String code) {
+        return code == null ? "" : code.trim().toUpperCase(Locale.ROOT);
+    }
+
     private List<MatchEntity> createRoundRobinMatches(String tournamentId, List<PlayerEntity> players) {
         List<MatchEntity> matches = new ArrayList<>();
         for (int i = 0; i < players.size(); i++) {
@@ -203,19 +301,35 @@ public class TournamentService {
         return (winsA == 2 || winsB == 2) && total >= 2 && total <= 3;
     }
 
-    private TournamentDto toDto(TournamentEntity tournament, List<PlayerEntity> players, List<MatchEntity> matches) {
+    private TournamentDto toDto(
+            TournamentEntity tournament,
+            List<PlayerEntity> players,
+            List<MatchEntity> matches,
+            List<TournamentParticipantEntity> participants,
+            AuthenticatedUser currentUser
+    ) {
         List<PlayerDto> playerDtos = players.stream().map(p -> new PlayerDto(p.getId(), p.getName())).toList();
         List<MatchDto> matchDtos = matches.stream().map(m -> new MatchDto(
                 m.getId(), m.getPlayerAId(), m.getPlayerBId(), m.getStatus(), m.getWinsA(), m.getWinsB(), m.getWinnerId()
         )).toList();
+        List<JoinedUserDto> participantDtos = participants.stream()
+                .map(p -> new JoinedUserDto(p.getUserEmail(), p.getUserName(), p.getJoinedAt()))
+                .toList();
+        boolean currentUserJoined = currentUser != null && participants.stream()
+                .anyMatch(participant -> participant.getUserEmail().equalsIgnoreCase(currentUser.email()));
 
         return new TournamentDto(
                 tournament.getId(),
                 tournament.getName(),
                 tournament.getCreatedAt(),
                 tournament.getStatus(),
+                tournament.getJoinCode(),
+                tournament.isJoinEnabled(),
+                tournament.getJoinCodeExpiresAt(),
                 playerDtos,
-                matchDtos
+                matchDtos,
+                participantDtos,
+                currentUserJoined
         );
     }
 
