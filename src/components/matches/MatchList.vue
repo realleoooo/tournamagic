@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { Match, Player } from '@/domain/models'
 import MatchTimer from '@/components/matches/MatchTimer.vue'
+import ScrollArea from '@/components/shared/ScrollArea.vue'
 
 const props = defineProps<{
   matches: Match[]
@@ -94,60 +95,62 @@ watch(
       <p>Switch rounds to record results and keep pairings visible at a glance.</p>
     </div>
 
-    <div v-if="rounds.length > 0" class="round-tabs">
-      <button
-        v-for="round in rounds"
-        :key="round.number"
-        type="button"
-        class="round-tabs__button"
-        :class="{ 'round-tabs__button--inactive': selectedRound !== round.number }"
-        @click="selectedRound = round.number"
-      >
-        Round {{ round.number }}
-      </button>
-    </div>
-
-    <p v-if="rounds.length === 0" class="empty-state">No rounds generated yet.</p>
-
-    <div v-else class="round-card">
-      <div class="round-card__header">
-        <div>
-          <h3>Round {{ selectedRound }}</h3>
-          <p>{{ selectedRoundMatches.length }} matches in this round</p>
-        </div>
+    <ScrollArea class="match-panel__scroll">
+      <div v-if="rounds.length > 0" class="round-tabs">
+        <button
+          v-for="round in rounds"
+          :key="round.number"
+          type="button"
+          class="round-tabs__button"
+          :class="{ 'round-tabs__button--inactive': selectedRound !== round.number }"
+          @click="selectedRound = round.number"
+        >
+          Round {{ round.number }}
+        </button>
       </div>
 
-      <article v-for="match in selectedRoundMatches" :key="match.id" class="match-row">
-        <div class="match-row__top">
+      <p v-if="rounds.length === 0" class="empty-state">No rounds generated yet.</p>
+
+      <div v-else class="round-card">
+        <div class="round-card__header">
           <div>
-            <h4>{{ resolveName(match.playerAId) }} vs {{ resolveName(match.playerBId) }}</h4>
-            <p>{{ match.status === 'completed' ? 'Result recorded' : 'Waiting for result' }}</p>
-          </div>
-          <span :class="match.status === 'completed' ? 'match-status match-status--done' : 'match-status'">
-            {{ match.status }}
-          </span>
-        </div>
-
-        <div class="match-row__controls">
-          <label>
-            <span>{{ resolveName(match.playerAId) }}</span>
-            <input v-model.number="inputFor(match.id).winsA" type="number" min="0" max="2" />
-          </label>
-          <label>
-            <span>{{ resolveName(match.playerBId) }}</span>
-            <input v-model.number="inputFor(match.id).winsB" type="number" min="0" max="2" />
-          </label>
-          <div class="match-row__actions">
-            <button type="button" @click="emit('submit', match.id, inputFor(match.id).winsA, inputFor(match.id).winsB)">
-              Save
-            </button>
-            <button type="button" class="secondary" @click="emit('clear', match.id)">Undo</button>
+            <h3>Round {{ selectedRound }}</h3>
+            <p>{{ selectedRoundMatches.length }} matches in this round</p>
           </div>
         </div>
 
-        <MatchTimer />
-      </article>
-    </div>
+        <article v-for="match in selectedRoundMatches" :key="match.id" class="match-row">
+          <div class="match-row__top">
+            <div>
+              <h4>{{ resolveName(match.playerAId) }} vs {{ resolveName(match.playerBId) }}</h4>
+              <p>{{ match.status === 'completed' ? 'Result recorded' : 'Waiting for result' }}</p>
+            </div>
+            <span :class="match.status === 'completed' ? 'match-status match-status--done' : 'match-status'">
+              {{ match.status }}
+            </span>
+          </div>
+
+          <div class="match-row__controls">
+            <label>
+              <span>{{ resolveName(match.playerAId) }}</span>
+              <input v-model.number="inputFor(match.id).winsA" type="number" min="0" max="2" />
+            </label>
+            <label>
+              <span>{{ resolveName(match.playerBId) }}</span>
+              <input v-model.number="inputFor(match.id).winsB" type="number" min="0" max="2" />
+            </label>
+            <div class="match-row__actions">
+              <button type="button" @click="emit('submit', match.id, inputFor(match.id).winsA, inputFor(match.id).winsB)">
+                Save
+              </button>
+              <button type="button" class="secondary" @click="emit('clear', match.id)">Undo</button>
+            </div>
+          </div>
+
+          <MatchTimer />
+        </article>
+      </div>
+    </ScrollArea>
   </section>
 </template>
 
@@ -159,7 +162,11 @@ watch(
 }
 
 .match-panel.section-scroll-panel {
-  overflow: auto;
+  min-height: 0;
+}
+
+.match-panel__scroll {
+  min-height: 0;
 }
 
 .section-heading h2,

@@ -5,6 +5,7 @@ import MatchList from '@/components/matches/MatchList.vue'
 import LeaderboardTable from '@/components/leaderboard/LeaderboardTable.vue'
 import ProgressPanel from '@/components/shared/ProgressPanel.vue'
 import InviteShareSection from '@/components/tournaments/InviteShareSection.vue'
+import ScrollArea from '@/components/shared/ScrollArea.vue'
 import { useTournamentStore } from '@/stores/tournament'
 
 const store = useTournamentStore()
@@ -230,17 +231,19 @@ const onLeave = async () => {
               <p>See who still needs to play each player before the schedule is complete.</p>
             </div>
 
-            <div class="opponents-board">
-              <article v-for="row in competitionRows" :key="row.id" class="opponent-row">
-                <div>
-                  <h3>{{ row.name }}</h3>
-                  <p>{{ row.opponents.length }} match{{ row.opponents.length === 1 ? '' : 'es' }} left</p>
-                </div>
-                <p class="opponent-row__list">
-                  {{ row.opponents.join(', ') || 'All pairings complete' }}
-                </p>
-              </article>
-            </div>
+            <ScrollArea class="opponents-panel__scroll">
+              <div class="opponents-board">
+                <article v-for="row in competitionRows" :key="row.id" class="opponent-row">
+                  <div>
+                    <h3>{{ row.name }}</h3>
+                    <p>{{ row.opponents.length }} match{{ row.opponents.length === 1 ? '' : 'es' }} left</p>
+                  </div>
+                  <p class="opponent-row__list">
+                    {{ row.opponents.join(', ') || 'All pairings complete' }}
+                  </p>
+                </article>
+              </div>
+            </ScrollArea>
           </section>
         </template>
 
@@ -372,6 +375,7 @@ const onLeave = async () => {
 .content-column {
   display: grid;
   gap: 1rem;
+  min-height: 0;
 }
 
 .header-row {
@@ -412,7 +416,12 @@ const onLeave = async () => {
 }
 
 .section-scroll-panel {
+  min-height: 0;
   max-height: min(70vh, 900px);
+}
+
+.opponents-panel__scroll {
+  min-height: 0;
 }
 
 .claims-panel {

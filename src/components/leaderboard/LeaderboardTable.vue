@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { StandingRow } from '@/domain/models'
+import ScrollArea from '@/components/shared/ScrollArea.vue'
 
 defineProps<{
   standings: StandingRow[]
@@ -13,7 +14,7 @@ defineProps<{
       <p>Standings update as soon as match results are saved.</p>
     </div>
 
-    <div class="leaderboard-table-wrap">
+    <ScrollArea class="leaderboard-table-wrap">
       <table class="leaderboard-table">
         <thead>
           <tr>
@@ -41,7 +42,7 @@ defineProps<{
           </tr>
         </tbody>
       </table>
-    </div>
+    </ScrollArea>
   </section>
 </template>
 
@@ -68,7 +69,6 @@ defineProps<{
 
 .leaderboard-table-wrap {
   min-height: 0;
-  overflow: auto;
 }
 
 .leaderboard-table {
