@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AuthForm from '@/components/auth/AuthForm.vue'
 import { useAuthStore } from '@/stores/auth'
 import { validateRegistration, type AuthFieldErrors } from '@/utils/authValidation'
@@ -9,10 +9,12 @@ type AuthFormExposed = {
   setErrors: (errors: AuthFieldErrors) => void
 }
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const formRef = ref<AuthFormExposed | null>(null)
 const formError = ref('')
+const redirectPath = computed(() => (typeof route.query.redirect === 'string' ? route.query.redirect : '/'))
 
 const submitRegistration = (values: { name: string; email: string; password: string }) => {
   const errors = validateRegistration(values)
@@ -29,7 +31,7 @@ const submitRegistration = (values: { name: string; email: string; password: str
     return
   }
 
-  router.push('/')
+  router.push(redirectPath.value)
 }
 </script>
 
@@ -45,7 +47,7 @@ const submitRegistration = (values: { name: string; email: string; password: str
   >
     <p class="auth-link">
       Already have an account?
-      <RouterLink to="/login">Log in</RouterLink>
+      <RouterLink :to="{ path: '/login', query: { redirect: redirectPath } }">Log in</RouterLink>
     </p>
   </AuthForm>
 </template>
