@@ -57,6 +57,8 @@ const copyText = async (value: string, label: string) => {
 .invite-panel {
   display: grid;
   gap: 1rem;
+  height: 100%;
+  align-content: start;
 }
 
 .section-heading h2,

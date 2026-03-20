@@ -179,29 +179,29 @@ const onLeave = async () => {
           </section>
         </template>
 
-        <InviteShareSection v-else :tournament="tournament" />
-      </main>
+        <section v-else class="invite-workspace">
+          <InviteShareSection :tournament="tournament" class="invite-workspace__panel" />
 
-      <aside class="claims-column">
-        <section class="card claims-panel">
-          <div class="section-heading">
-            <h2>Player Claims</h2>
-            <p>Joined users must claim a seat before they can participate in the tournament.</p>
-          </div>
+          <section class="card claims-panel invite-workspace__panel">
+            <div class="section-heading">
+              <h2>Player Claims</h2>
+              <p>Joined users must claim a seat before they can participate in the tournament.</p>
+            </div>
 
-          <ul class="participant-list">
-            <li v-for="player in tournament.players" :key="player.id" class="participant-list__item">
-              <div>
-                <strong>{{ player.name }}</strong>
-                <p>{{ player.claimedByName ? `${player.claimedByName} · ${player.claimedByEmail}` : 'Unclaimed' }}</p>
-              </div>
-              <span :class="player.claimedByEmail ? 'claim-state claim-state--joined' : 'claim-state'">
-                {{ player.claimedByEmail ? 'Joined' : 'Waiting' }}
-              </span>
-            </li>
-          </ul>
+            <ul class="participant-list">
+              <li v-for="player in tournament.players" :key="player.id" class="participant-list__item">
+                <div>
+                  <strong>{{ player.name }}</strong>
+                  <p>{{ player.claimedByName ? `${player.claimedByName} · ${player.claimedByEmail}` : 'Unclaimed' }}</p>
+                </div>
+                <span :class="player.claimedByEmail ? 'claim-state claim-state--joined' : 'claim-state'">
+                  {{ player.claimedByEmail ? 'Joined' : 'Waiting' }}
+                </span>
+              </li>
+            </ul>
+          </section>
         </section>
-      </aside>
+      </main>
     </div>
   </div>
 </template>
@@ -273,8 +273,7 @@ const onLeave = async () => {
   color: var(--text-soft);
 }
 
-.content-column,
-.claims-column {
+.content-column {
   display: grid;
   gap: 1rem;
 }
@@ -308,7 +307,17 @@ const onLeave = async () => {
 }
 
 .claims-panel {
-  height: fit-content;
+  display: grid;
+  align-content: start;
+}
+
+.invite-workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+.invite-workspace__panel {
+  height: 100%;
 }
 
 .participant-list {
@@ -373,8 +382,8 @@ const onLeave = async () => {
 
 @media (min-width: 980px) {
   .tournament-layout {
-    grid-template-columns: 250px minmax(0, 1fr) 320px;
-    align-items: start;
+    grid-template-columns: 250px minmax(0, 1fr);
+    align-items: stretch;
   }
 
   .sidebar-toggle {
@@ -384,13 +393,13 @@ const onLeave = async () => {
   .sidebar {
     display: grid;
     gap: 1rem;
-    position: sticky;
-    top: 5.5rem;
+    height: 100%;
+    align-content: start;
   }
 
-  .claims-column {
-    position: sticky;
-    top: 5.5rem;
+  .invite-workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
+    align-items: stretch;
   }
 }
 </style>
