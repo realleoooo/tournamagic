@@ -1,91 +1,169 @@
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg-main);
+}
+
 body {
   margin: 0;
-  font-family: Inter, system-ui, sans-serif;
-  background: radial-gradient(circle at top, color-mix(in srgb, var(--accent-arcane) 25%, #06070b), var(--bg-main));
+  font-family: "Avenir Next", "Helvetica Neue", sans-serif;
+  background: var(--bg-main);
   color: var(--text-main);
 }
 
-.app-bg { min-height: 100vh; }
-.topbar {
-  border-bottom: 1px solid color-mix(in srgb, var(--accent-arcane) 45%, transparent);
-  padding: 1rem;
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
+
+button {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  font-weight: 600;
+  background: var(--accent-arcane);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+button:hover,
+button:focus-visible {
+  background: color-mix(in srgb, var(--accent-arcane) 85%, black);
+}
+
+button.secondary {
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--text-main);
+}
+
+button.secondary:hover,
+button.secondary:focus-visible {
+  background: var(--bg-muted);
+}
+
+button.warn {
+  background: var(--danger);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input,
+select {
+  width: 100%;
+  background: var(--bg-main);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent-arcane) 35%, transparent);
+  outline-offset: 1px;
+}
+
+progress {
+  accent-color: var(--accent-arcane);
+}
+
+a {
+  color: var(--accent-gold);
+}
+
+.app-bg {
+  min-height: 100vh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
 .topbar__content {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 1rem 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
-.topbar h1 { margin: 0; color: var(--accent-gold); }
-.topbar p { margin: 0.25rem 0 0; color: var(--text-soft); }
+
+.topbar h1,
+.topbar p {
+  margin: 0;
+}
+
+.topbar h1 {
+  font-size: 1.5rem;
+  color: var(--accent-gold);
+}
+
+.topbar p {
+  margin-top: 0.25rem;
+  color: var(--text-soft);
+}
+
 .topbar__actions {
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  flex-wrap: wrap;
 }
-.auth-status {
+
+.auth-status,
+.theme-picker {
   display: flex;
   align-items: center;
   gap: 0.6rem;
   color: var(--text-soft);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
-.theme-picker {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  color: var(--text-soft);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
+
 .layout {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 1rem;
-}
-.card {
-  background: linear-gradient(180deg, var(--bg-elevated), var(--bg-surface));
-  border: 1px solid color-mix(in srgb, var(--accent-arcane) 35%, transparent);
-  border-radius: var(--radius);
-  padding: 1rem;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-arcane) 25%, transparent), 0 6px 24px rgba(0, 0, 0, 0.35);
-}
-button {
-  border: 0;
-  border-radius: 10px;
-  padding: 0.6rem 0.9rem;
-  font-weight: 600;
-  background: var(--accent-arcane);
-  color: white;
-  cursor: pointer;
-}
-button.secondary { background: #374151; }
-button.warn { background: var(--danger); }
-input, select {
-  background: color-mix(in srgb, var(--bg-main) 85%, black);
-  color: var(--text-main);
-  border: 1px solid color-mix(in srgb, var(--accent-arcane) 45%, transparent);
-  border-radius: 8px;
-  padding: 0.55rem;
+  padding: 1.25rem;
 }
 
-@media (max-width: 720px) {
-  .topbar__content {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .topbar__actions {
-    flex-direction: column;
-  }
-}
 .grid {
   display: grid;
   gap: 1rem;
 }
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 720px) {
+  .topbar__content {
+    align-items: flex-start;
+  }
+
+  .topbar__actions {
+    width: 100%;
+  }
+}
+
 @media (min-width: 900px) {
-  .grid.two { grid-template-columns: 2fr 1fr; }
+  .grid.two {
+    grid-template-columns: 2fr 1fr;
+  }
 }
