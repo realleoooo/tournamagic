@@ -133,6 +133,25 @@ a {
   font-size: 0.95rem;
 }
 
+.sidebar-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.sidebar-trigger__icon {
+  display: inline-grid;
+  gap: 3px;
+}
+
+.sidebar-trigger__icon span {
+  display: block;
+  width: 14px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 999px;
+}
+
 .layout {
   max-width: 1400px;
   margin: 0 auto;
@@ -159,6 +178,12 @@ a {
 
   .topbar__actions {
     width: 100%;
+  }
+}
+
+@media (min-width: 980px) {
+  .sidebar-trigger {
+    display: none;
   }
 }
 

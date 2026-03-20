@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import MatchList from '@/components/matches/MatchList.vue'
 import LeaderboardTable from '@/components/leaderboard/LeaderboardTable.vue'
@@ -10,8 +10,52 @@ import { useTournamentStore } from '@/stores/tournament'
 const store = useTournamentStore()
 const router = useRouter()
 
+const menuItems = [
+  {
+    key: 'rounds',
+    label: 'Round Overview',
+    icon: [
+      'M4 6.5h16',
+      'M4 12h16',
+      'M4 17.5h10'
+    ]
+  },
+  {
+    key: 'leaderboard',
+    label: 'Leaderboard',
+    icon: [
+      'M5 18V9',
+      'M10 18V6',
+      'M15 18v-4',
+      'M20 18V3'
+    ]
+  },
+  {
+    key: 'opponents',
+    label: 'Remaining Opponents',
+    icon: [
+      'M7 7h10',
+      'M7 12h10',
+      'M7 17h6',
+      'M4 7h.01',
+      'M4 12h.01',
+      'M4 17h.01'
+    ]
+  },
+  {
+    key: 'invites',
+    label: 'Invite Players',
+    icon: [
+      'M4 7.5 12 13l8-5.5',
+      'M5.5 6h13A1.5 1.5 0 0 1 20 7.5v9A1.5 1.5 0 0 1 18.5 18h-13A1.5 1.5 0 0 1 4 16.5v-9A1.5 1.5 0 0 1 5.5 6Z'
+    ]
+  }
+] as const
+
+type SectionKey = (typeof menuItems)[number]['key']
+
 const tournament = computed(() => store.tournament)
-const activeSection = ref<'competition' | 'invites'>('competition')
+const activeSection = ref<SectionKey>('rounds')
 const sidebarOpen = ref(false)
 
 const canStartTournament = computed(
@@ -33,7 +77,17 @@ const competitionRows = computed(() =>
   })) ?? []
 )
 
+const toggleSidebar = () => {
+  sidebarOpen.value = !sidebarOpen.value
+}
+
+const closeSidebar = () => {
+  sidebarOpen.value = false
+}
+
 onMounted(async () => {
+  window.addEventListener('tournamagic:toggle-sidebar', toggleSidebar)
+
   if (!tournament.value) {
     await store.bootstrap()
   }
@@ -43,9 +97,13 @@ onMounted(async () => {
   }
 })
 
-const selectSection = (section: 'competition' | 'invites') => {
+onBeforeUnmount(() => {
+  window.removeEventListener('tournamagic:toggle-sidebar', toggleSidebar)
+})
+
+const selectSection = (section: SectionKey) => {
   activeSection.value = section
-  sidebarOpen.value = false
+  closeSidebar()
 }
 
 const goOverview = () => {
@@ -82,34 +140,33 @@ const onLeave = async () => {
     </section>
 
     <div v-if="tournament" class="tournament-layout">
-      <button
-        type="button"
-        class="sidebar-toggle secondary"
-        :aria-expanded="sidebarOpen"
-        @click="sidebarOpen = !sidebarOpen"
-      >
-        {{ sidebarOpen ? 'Hide menu' : 'Show menu' }}
-      </button>
+      <button v-if="sidebarOpen" type="button" class="sidebar-backdrop" aria-label="Close menu" @click="closeSidebar" />
 
-      <aside class="sidebar card" :class="{ 'sidebar--open': sidebarOpen }">
+      <aside class="sidebar" :class="{ 'sidebar--open': sidebarOpen }">
         <div class="sidebar__section">
           <p class="sidebar__label">Tournament menu</p>
           <nav class="sidebar__nav" aria-label="Tournament sections">
             <button
+              v-for="item in menuItems"
+              :key="item.key"
               type="button"
               class="sidebar__link"
-              :class="{ 'sidebar__link--active': activeSection === 'competition' }"
-              @click="selectSection('competition')"
+              :class="{ 'sidebar__link--active': activeSection === item.key }"
+              @click="selectSection(item.key)"
             >
-              Competition
-            </button>
-            <button
-              type="button"
-              class="sidebar__link"
-              :class="{ 'sidebar__link--active': activeSection === 'invites' }"
-              @click="selectSection('invites')"
-            >
-              Invite Players
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  v-for="segment in item.icon"
+                  :key="segment"
+                  :d="segment"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                />
+              </svg>
+              <span>{{ item.label }}</span>
             </button>
           </nav>
         </div>
@@ -142,7 +199,7 @@ const onLeave = async () => {
           </p>
         </section>
 
-        <template v-if="activeSection === 'competition'">
+        <template v-if="activeSection === 'rounds'">
           <ProgressPanel
             v-if="tournament.matches.length > 0"
             :completed="store.completion.completed"
@@ -156,8 +213,24 @@ const onLeave = async () => {
             @submit="store.submitResult"
             @clear="store.clearResult"
           />
+        </template>
+
+        <template v-else-if="activeSection === 'leaderboard'">
+          <ProgressPanel
+            v-if="tournament.matches.length > 0"
+            :completed="store.completion.completed"
+            :total="store.completion.total"
+          />
 
           <LeaderboardTable v-if="tournament.matches.length > 0" :standings="store.standings" />
+        </template>
+
+        <template v-else-if="activeSection === 'opponents'">
+          <ProgressPanel
+            v-if="tournament.matches.length > 0"
+            :completed="store.completion.completed"
+            :total="store.completion.total"
+          />
 
           <section v-if="tournament.matches.length > 0" class="card opponents-panel">
             <div class="section-heading">
@@ -213,21 +286,40 @@ const onLeave = async () => {
 }
 
 .tournament-layout {
+  position: relative;
   display: grid;
   gap: 1rem;
 }
 
-.sidebar-toggle {
-  justify-self: start;
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  background: rgba(0, 0, 0, 0.45);
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 
 .sidebar {
-  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 25;
+  width: min(280px, 84vw);
+  padding: 1.25rem 1rem;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+  transform: translateX(-100%);
+  transition: transform 180ms ease;
 }
 
 .sidebar--open {
-  display: grid;
-  gap: 1rem;
+  transform: translateX(0);
 }
 
 .sidebar__section {
@@ -249,10 +341,18 @@ const onLeave = async () => {
 .sidebar__link {
   width: 100%;
   justify-content: flex-start;
+  align-items: center;
+  gap: 0.7rem;
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-main);
   font-weight: 600;
+}
+
+.sidebar__link svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
 }
 
 .sidebar__link:hover,
@@ -381,20 +481,25 @@ const onLeave = async () => {
 }
 
 @media (min-width: 980px) {
+  .sidebar-backdrop {
+    display: none;
+  }
+
   .tournament-layout {
     grid-template-columns: 250px minmax(0, 1fr);
     align-items: stretch;
   }
 
-  .sidebar-toggle {
-    display: none;
-  }
-
   .sidebar {
-    display: grid;
-    gap: 1rem;
+    position: static;
+    width: auto;
+    padding: 1rem;
     height: 100%;
-    align-content: start;
+    transform: none;
+    transition: none;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   }
 
   .invite-workspace {
