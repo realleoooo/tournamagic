@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import MatchList from '@/components/matches/MatchList.vue'
 import LeaderboardTable from '@/components/leaderboard/LeaderboardTable.vue'
@@ -9,9 +9,11 @@ import { useTournamentStore } from '@/stores/tournament'
 
 const store = useTournamentStore()
 const router = useRouter()
-const joinMessage = ref('')
 
 const tournament = computed(() => store.tournament)
+const canStartTournament = computed(
+  () => tournament.value?.status === 'setup' && tournament.value.players.length >= 2
+)
 
 onMounted(async () => {
   if (!tournament.value) {
@@ -33,15 +35,17 @@ const onReset = async () => {
   router.replace('/')
 }
 
-const joinCurrentTournament = async () => {
-  if (!tournament.value) {
+const onStart = async () => {
+  const started = await store.startTournament()
+  if (started) {
     return
   }
+}
 
-  joinMessage.value = ''
-  const joined = await store.joinTournament(tournament.value.joinCode)
-  if (joined) {
-    joinMessage.value = 'You are now on the participant list for this tournament.'
+const onLeave = async () => {
+  const updated = await store.leaveJoinedTournament()
+  if (updated) {
+    router.replace('/')
   }
 }
 </script>
@@ -58,26 +62,30 @@ const joinCurrentTournament = async () => {
       <div class="grid">
         <section class="card">
           <h2>{{ tournament.name }}</h2>
-          <p>{{ tournament.players.length }} players · {{ tournament.participants.length }} joined friends</p>
+          <p>{{ tournament.players.length }} joined players · status: {{ tournament.status }}</p>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom: 0.75rem;">
             <button type="button" class="secondary" @click="goOverview">Back to overview</button>
             <button class="warn" type="button" @click="onReset">Reset Tournament</button>
+            <button v-if="canStartTournament" type="button" @click="onStart">Start Tournament</button>
             <button
-              v-if="!tournament.currentUserJoined && tournament.joinEnabled && tournament.status !== 'complete'"
+              v-if="tournament.currentUserJoined && tournament.status === 'setup'"
               type="button"
-              @click="joinCurrentTournament"
+              class="secondary"
+              @click="onLeave"
             >
-              Join this tournament
+              Leave Tournament
             </button>
           </div>
-          <p v-if="tournament.currentUserJoined" class="success">You have joined this tournament with your account.</p>
-          <p v-else-if="joinMessage" class="success">{{ joinMessage }}</p>
-          <p v-if="!tournament.joinEnabled || tournament.status === 'complete'" class="error">
-            This tournament is closed to new participants.
+          <p v-if="tournament.status === 'setup'" class="muted">
+            Invite players with the QR code. Once at least 2 players have joined, start the tournament to generate matches.
+          </p>
+          <p v-else-if="!tournament.currentUserJoined" class="muted">
+            You are viewing this tournament, but you are not currently part of its player roster.
           </p>
         </section>
-        <InviteShareSection :tournament="tournament" />
-        <ProgressPanel :completed="store.completion.completed" :total="store.completion.total" />
+
+        <InviteShareSection v-if="tournament.status === 'setup'" :tournament="tournament" />
+        <ProgressPanel v-if="tournament.matches.length > 0" :completed="store.completion.completed" :total="store.completion.total" />
         <MatchList
           :matches="tournament.matches"
           :players="tournament.players"
@@ -88,8 +96,8 @@ const joinCurrentTournament = async () => {
       </div>
       <div class="grid">
         <section class="card">
-          <h2>Joined Participants</h2>
-          <p class="muted">Friends who joined with an account appear here.</p>
+          <h2>Joined Players</h2>
+          <p class="muted">Everyone who joined through the invite is part of the tournament roster.</p>
           <ul v-if="tournament.participants.length > 0" class="participant-list">
             <li v-for="participant in tournament.participants" :key="participant.email" class="participant-list__item">
               <div>
@@ -99,10 +107,11 @@ const joinCurrentTournament = async () => {
               <span>{{ new Date(participant.joinedAt).toLocaleDateString() }}</span>
             </li>
           </ul>
-          <p v-else class="muted">No one has joined this tournament yet.</p>
+          <p v-else class="muted">No players have joined yet.</p>
         </section>
-        <LeaderboardTable :standings="store.standings" />
-        <section class="card">
+
+        <LeaderboardTable v-if="tournament.matches.length > 0" :standings="store.standings" />
+        <section v-if="tournament.matches.length > 0" class="card">
           <h2>Remaining Opponents</h2>
           <ul>
             <li v-for="player in tournament.players" :key="player.id">
@@ -117,16 +126,6 @@ const joinCurrentTournament = async () => {
 </template>
 
 <style scoped>
-.success {
-  margin: 0;
-  color: var(--success);
-}
-
-.error {
-  margin: 0;
-  color: var(--danger);
-}
-
 .muted {
   color: var(--text-soft);
 }

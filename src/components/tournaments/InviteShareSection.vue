@@ -27,10 +27,8 @@ const copyText = async (value: string, label: string) => {
 <template>
   <section class="card grid">
     <div>
-      <h2>Invite &amp; Share</h2>
-      <p class="muted">
-        Share the join code, invite link, or QR code so authenticated friends can join this tournament.
-      </p>
+      <h2>Invite Players</h2>
+      <p class="muted">Share this QR code so players can join the tournament with their own account.</p>
     </div>
 
     <div class="invite-layout">
@@ -38,23 +36,22 @@ const copyText = async (value: string, label: string) => {
 
       <div class="grid invite-details">
         <div class="invite-meta">
-          <span class="invite-label">Join code</span>
-          <strong class="invite-code">{{ tournament.joinCode }}</strong>
+          <span class="invite-label">Invite link</span>
+          <strong class="invite-code">Ready to scan</strong>
         </div>
 
         <div class="invite-actions">
-          <button type="button" @click="copyText(tournament.joinCode, 'Join code')">Copy code</button>
-          <button type="button" class="secondary" @click="copyText(joinLink, 'Join link')">Copy link</button>
+          <button type="button" @click="copyText(joinLink, 'Invite link')">Copy invite link</button>
         </div>
 
         <label class="invite-field">
-          <span>Join link</span>
+          <span>Invite link</span>
           <input :value="joinLink" readonly />
         </label>
 
         <p v-if="copyStatus" class="invite-feedback">{{ copyStatus }}</p>
-        <p v-if="!tournament.joinEnabled || tournament.status === 'complete'" class="invite-warning">
-          Joining is currently unavailable for this tournament.
+        <p v-if="!tournament.joinEnabled || tournament.status !== 'setup'" class="invite-warning">
+          Joining is currently unavailable because this tournament has already started.
         </p>
       </div>
     </div>
@@ -98,8 +95,7 @@ const copyText = async (value: string, label: string) => {
 }
 
 .invite-code {
-  font-size: 1.6rem;
-  letter-spacing: 0.16em;
+  font-size: 1.25rem;
 }
 
 .invite-actions {

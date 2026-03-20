@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class TournamentService {
+    private static final String SETUP_STATUS = "setup";
     private static final String ACTIVE_STATUS = "active";
     private static final String COMPLETE_STATUS = "complete";
     private static final String JOIN_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -46,29 +47,15 @@ public class TournamentService {
 
     @Transactional
     public TournamentDto createTournament(CreateTournamentRequest request, AuthenticatedUser currentUser) {
-        validatePlayers(request.players());
-
         TournamentEntity tournament = new TournamentEntity();
         tournament.setId(UUID.randomUUID().toString());
         tournament.setName(request.name().trim());
-        tournament.setStatus(ACTIVE_STATUS);
+        tournament.setStatus(SETUP_STATUS);
         tournament.setCreatedAt(Instant.now());
         tournament.setJoinCode(generateJoinCode());
         tournament.setJoinEnabled(true);
         tournament.setJoinCodeExpiresAt(null);
         tournamentRepository.save(tournament);
-
-        List<PlayerEntity> players = request.players().stream().map(name -> {
-            PlayerEntity p = new PlayerEntity();
-            p.setId(UUID.randomUUID().toString());
-            p.setTournamentId(tournament.getId());
-            p.setName(name.trim());
-            return p;
-        }).toList();
-        playerRepository.saveAll(players);
-
-        List<MatchEntity> matches = createRoundRobinMatches(tournament.getId(), players);
-        matchRepository.saveAll(matches);
 
         if (currentUser != null) {
             addParticipantIfMissing(tournament, currentUser);
@@ -119,9 +106,48 @@ public class TournamentService {
     @Transactional
     public TournamentDto joinTournament(String code, AuthenticatedUser currentUser) {
         TournamentEntity tournament = findTournamentByCode(code);
-        assertJoinable(tournament);
         addParticipantIfMissing(tournament, currentUser);
         return getTournament(tournament.getId(), currentUser);
+    }
+
+    @Transactional
+    public TournamentDto leaveTournament(String tournamentId, AuthenticatedUser currentUser) {
+        TournamentEntity tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
+        assertSetupRosterOpen(tournament, "You can only leave before the tournament starts.");
+
+        TournamentParticipantEntity participant = tournamentParticipantRepository
+                .findByTournamentIdAndUserEmail(tournamentId, currentUser.email().trim().toLowerCase())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You are not part of this tournament."));
+
+        tournamentParticipantRepository.deleteById(participant.getId());
+        playerRepository.deleteById(participant.getId());
+
+        return getTournament(tournamentId, currentUser);
+    }
+
+    @Transactional
+    public TournamentDto startTournament(String tournamentId, AuthenticatedUser currentUser) {
+        TournamentEntity tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tournament not found"));
+        assertSetupRosterOpen(tournament, "This tournament has already started.");
+
+        List<PlayerEntity> players = playerRepository.findByTournamentId(tournamentId);
+        if (players.size() < 2) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least 2 joined players are required to start the tournament.");
+        }
+
+        if (!matchRepository.findByTournamentId(tournamentId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Matches have already been generated for this tournament.");
+        }
+
+        List<MatchEntity> matches = createRoundRobinMatches(tournamentId, players);
+        matchRepository.saveAll(matches);
+        tournament.setStatus(ACTIVE_STATUS);
+        tournament.setJoinEnabled(false);
+        tournamentRepository.save(tournament);
+
+        return getTournament(tournamentId, currentUser);
     }
 
     @Transactional
@@ -225,30 +251,35 @@ public class TournamentService {
         return tournament;
     }
 
-    private void assertJoinable(TournamentEntity tournament) {
-        if (!tournament.isJoinEnabled()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Joining is disabled for this tournament.");
-        }
-        if (COMPLETE_STATUS.equals(tournament.getStatus())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "This tournament is closed and can no longer be joined.");
+    private void assertSetupRosterOpen(TournamentEntity tournament, String message) {
+        if (!tournament.isJoinEnabled() || !SETUP_STATUS.equals(tournament.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, message);
         }
     }
 
     private void addParticipantIfMissing(TournamentEntity tournament, AuthenticatedUser currentUser) {
-        assertJoinable(tournament);
+        assertSetupRosterOpen(tournament, "This tournament is no longer accepting players.");
 
         String email = currentUser.email().trim().toLowerCase();
         if (tournamentParticipantRepository.findByTournamentIdAndUserEmail(tournament.getId(), email).isPresent()) {
             return;
         }
 
+        String participantId = UUID.randomUUID().toString();
+
         TournamentParticipantEntity participant = new TournamentParticipantEntity();
-        participant.setId(UUID.randomUUID().toString());
+        participant.setId(participantId);
         participant.setTournamentId(tournament.getId());
         participant.setUserEmail(email);
         participant.setUserName(currentUser.name().trim());
         participant.setJoinedAt(Instant.now());
         tournamentParticipantRepository.save(participant);
+
+        PlayerEntity player = new PlayerEntity();
+        player.setId(participantId);
+        player.setTournamentId(tournament.getId());
+        player.setName(currentUser.name().trim());
+        playerRepository.save(player);
     }
 
     private String generateJoinCode() {
@@ -284,16 +315,6 @@ public class TournamentService {
             }
         }
         return matches;
-    }
-
-    private void validatePlayers(List<String> playerNames) {
-        Set<String> dedupe = new HashSet<>();
-        for (String name : playerNames) {
-            String n = name.trim().toLowerCase();
-            if (!dedupe.add(n)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duplicate player name: " + name);
-            }
-        }
     }
 
     private boolean isValidBo3(int winsA, int winsB) {

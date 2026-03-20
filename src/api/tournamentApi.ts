@@ -14,7 +14,7 @@ export type TournamentSummary = {
   totalMatches: number
 }
 
-type CreateTournamentPayload = { name: string; players: string[] }
+type CreateTournamentPayload = { name: string }
 type MatchPayload = { winsA: number; winsB: number }
 type JoinTournamentPayload = { code: string }
 
@@ -83,6 +83,16 @@ export const tournamentApi = {
   },
   async fetchTournament(id: string): Promise<Tournament> {
     return request<Tournament>(`/tournaments/${id}`)
+  },
+  async startTournament(tournamentId: string): Promise<Tournament> {
+    return request<Tournament>(`/tournaments/${tournamentId}/start`, {
+      method: 'POST'
+    })
+  },
+  async leaveTournament(tournamentId: string): Promise<Tournament> {
+    return request<Tournament>(`/tournaments/${tournamentId}/participants/me`, {
+      method: 'DELETE'
+    })
   },
   async previewJoin(code: string): Promise<JoinTournamentPreview> {
     return request<JoinTournamentPreview>(`/tournaments/join/${encodeURIComponent(code)}`)

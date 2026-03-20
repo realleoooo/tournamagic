@@ -45,6 +45,24 @@ public class TournamentController {
         return tournamentService.getTournament(id, optionalUser(authName, authEmail));
     }
 
+    @PostMapping("/{id}/start")
+    public TournamentDto startTournament(
+            @PathVariable String id,
+            @RequestHeader(value = AUTH_NAME_HEADER, required = false) String authName,
+            @RequestHeader(value = AUTH_EMAIL_HEADER, required = false) String authEmail
+    ) {
+        return tournamentService.startTournament(id, requiredUser(authName, authEmail));
+    }
+
+    @DeleteMapping("/{id}/participants/me")
+    public TournamentDto leaveTournament(
+            @PathVariable String id,
+            @RequestHeader(value = AUTH_NAME_HEADER, required = false) String authName,
+            @RequestHeader(value = AUTH_EMAIL_HEADER, required = false) String authEmail
+    ) {
+        return tournamentService.leaveTournament(id, requiredUser(authName, authEmail));
+    }
+
     @GetMapping("/join/{code}")
     public JoinTournamentPreviewDto previewJoin(@PathVariable String code) {
         return tournamentService.previewJoin(code);
@@ -101,7 +119,7 @@ public class TournamentController {
     private AuthenticatedUser requiredUser(String authName, String authEmail) {
         AuthenticatedUser user = optionalUser(authName, authEmail);
         if (user == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "You must be logged in to join a tournament.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "You must be logged in to manage tournament membership.");
         }
         return user;
     }
