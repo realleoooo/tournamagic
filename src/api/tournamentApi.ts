@@ -27,6 +27,24 @@ const writeId = (id?: string) => {
   window.localStorage.setItem(ID_KEY, id)
 }
 
+const parseErrorMessage = (status: number, text: string) => {
+  const trimmed = text.trim()
+
+  if (!trimmed) {
+    return `Request failed: ${status}`
+  }
+
+  if (trimmed.startsWith('<')) {
+    if (status >= 500) {
+      return 'The backend is currently unavailable. Please try again in a moment.'
+    }
+
+    return 'The server returned an unexpected response.'
+  }
+
+  return trimmed
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -39,7 +57,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const text = await response.text()
-    throw new Error(text || `Request failed: ${response.status}`)
+    throw new Error(parseErrorMessage(response.status, text))
   }
 
   if (response.status === 204) {
