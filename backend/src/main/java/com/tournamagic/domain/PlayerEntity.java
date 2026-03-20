@@ -17,10 +17,20 @@ public class PlayerEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "claimed_by_email")
+    private String claimedByEmail;
+
+    @Column(name = "claimed_by_name")
+    private String claimedByName;
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getTournamentId() { return tournamentId; }
     public void setTournamentId(String tournamentId) { this.tournamentId = tournamentId; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public String getClaimedByEmail() { return claimedByEmail; }
+    public void setClaimedByEmail(String claimedByEmail) { this.claimedByEmail = claimedByEmail; }
+    public String getClaimedByName() { return claimedByName; }
+    public void setClaimedByName(String claimedByName) { this.claimedByName = claimedByName; }
 }

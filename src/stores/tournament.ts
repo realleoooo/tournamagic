@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { buildStandings } from '@/domain/ranking'
-import type { Tournament } from '@/domain/models'
+import type { JoinTournamentPreview, Tournament } from '@/domain/models'
 import { tournamentApi, type TournamentSummary } from '@/api/tournamentApi'
 
 export const useTournamentStore = defineStore('tournament', () => {
   const tournament = ref<Tournament | undefined>(undefined)
   const tournaments = ref<TournamentSummary[]>([])
+  const joinPreview = ref<JoinTournamentPreview | undefined>(undefined)
   const loading = ref(false)
   const error = ref<string | undefined>(undefined)
 
@@ -65,13 +66,52 @@ export const useTournamentStore = defineStore('tournament', () => {
     return fetched
   }
 
-  const createTournament = async (name: string, playerNames: string[]) => {
-    const created = await withLoading(() => tournamentApi.createTournament({ name, players: playerNames }))
+  const createTournament = async (name: string, players: string[], creatorPlayerName: string) => {
+    const created = await withLoading(() => tournamentApi.createTournament({ name, players, creatorPlayerName }))
     if (created) {
       tournament.value = created
       await refreshTournamentList()
     }
     return created
+  }
+
+  const startTournament = async () => {
+    if (!tournament.value) return
+    const started = await withLoading(() => tournamentApi.startTournament(tournament.value!.id))
+    if (started) {
+      tournament.value = started
+      await refreshTournamentList()
+    }
+    return started
+  }
+
+  const leaveJoinedTournament = async () => {
+    if (!tournament.value) return
+    const updated = await withLoading(() => tournamentApi.leaveTournament(tournament.value!.id))
+    if (updated) {
+      tournament.value = updated
+      await refreshTournamentList()
+    }
+    return updated
+  }
+
+  const previewJoin = async (code: string) => {
+    joinPreview.value = undefined
+    const preview = await withLoading(() => tournamentApi.previewJoin(code))
+    if (preview) {
+      joinPreview.value = preview
+    }
+    return preview
+  }
+
+  const joinTournament = async (code: string, playerId: string) => {
+    const joined = await withLoading(() => tournamentApi.joinTournament({ code, playerId }))
+    if (joined) {
+      tournament.value = joined
+      joinPreview.value = undefined
+      await refreshTournamentList()
+    }
+    return joined
   }
 
   const submitResult = async (matchId: string, winsA: number, winsB: number) => {
@@ -129,6 +169,7 @@ export const useTournamentStore = defineStore('tournament', () => {
   return {
     tournament,
     tournaments,
+    joinPreview,
     loading,
     error,
     standings,
@@ -137,6 +178,10 @@ export const useTournamentStore = defineStore('tournament', () => {
     refreshTournamentList,
     openTournament,
     createTournament,
+    startTournament,
+    leaveJoinedTournament,
+    previewJoin,
+    joinTournament,
     submitResult,
     clearResult,
     leaveTournament,

@@ -7,6 +7,7 @@
   --accent-arcane: #2f9e44;
   --accent-gold: #e7cc72;
   --ok: #22c55e;
+  --success: var(--ok);
   --danger: #ef4444;
   --radius: 14px;
 }
@@ -40,6 +41,7 @@
   --accent-arcane: #a68d4f;
   --accent-gold: #d7b654;
   --ok: #1d8d4d;
+  --success: var(--ok);
   --danger: #c53535;
 }
 

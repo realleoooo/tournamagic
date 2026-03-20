@@ -7,6 +7,7 @@ import java.util.List;
 
 public record CreateTournamentRequest(
         @NotBlank String name,
-        @Size(min = 2) List<@NotBlank String> players
+        @Size(min = 2) List<@NotBlank String> players,
+        @NotBlank String creatorPlayerName
 ) {
 }
