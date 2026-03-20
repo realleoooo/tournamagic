@@ -179,34 +179,38 @@ const onLeave = async () => {
       </aside>
 
       <main class="content-column">
-        <section class="card tournament-header">
-          <div>
-            <h2>{{ tournament.name }}</h2>
-            <p>
-              {{ tournament.players.length }} players · {{ store.completion.completed }}/{{ store.completion.total }} matches reported
+        <section class="header-row" :class="{ 'header-row--with-progress': activeSection === 'rounds' && tournament.matches.length > 0 }">
+          <section class="card tournament-header">
+            <div>
+              <h2>{{ tournament.name }}</h2>
+              <p>
+                {{ tournament.players.length }} players · {{ store.completion.completed }}/{{ store.completion.total }} matches reported
+              </p>
+            </div>
+            <div class="tournament-header__actions">
+              <button type="button" class="secondary" @click="goOverview">Back to overview</button>
+              <button class="warn" type="button" @click="onReset">Reset Tournament</button>
+              <button v-if="canStartTournament" type="button" @click="onStart">Start Tournament</button>
+              <button v-if="tournament.currentUserJoined" type="button" class="secondary" @click="onLeave">
+                Leave Tournament
+              </button>
+            </div>
+            <p v-if="tournament.status === 'setup'" class="tournament-header__note">
+              Every player slot must be claimed before the tournament can start.
             </p>
-          </div>
-          <div class="tournament-header__actions">
-            <button type="button" class="secondary" @click="goOverview">Back to overview</button>
-            <button class="warn" type="button" @click="onReset">Reset Tournament</button>
-            <button v-if="canStartTournament" type="button" @click="onStart">Start Tournament</button>
-            <button v-if="tournament.currentUserJoined" type="button" class="secondary" @click="onLeave">
-              Leave Tournament
-            </button>
-          </div>
-          <p v-if="tournament.status === 'setup'" class="tournament-header__note">
-            Every player slot must be claimed before the tournament can start.
-          </p>
-        </section>
+          </section>
 
-        <template v-if="activeSection === 'rounds'">
           <ProgressPanel
-            v-if="tournament.matches.length > 0"
+            v-if="activeSection === 'rounds' && tournament.matches.length > 0"
+            class="header-row__progress"
             :completed="store.completion.completed"
             :total="store.completion.total"
           />
+        </section>
 
+        <template v-if="activeSection === 'rounds'">
           <MatchList
+            class="section-scroll-panel"
             :matches="tournament.matches"
             :players="tournament.players"
             :resolve-name="store.resolveName"
@@ -216,23 +220,11 @@ const onLeave = async () => {
         </template>
 
         <template v-else-if="activeSection === 'leaderboard'">
-          <ProgressPanel
-            v-if="tournament.matches.length > 0"
-            :completed="store.completion.completed"
-            :total="store.completion.total"
-          />
-
-          <LeaderboardTable v-if="tournament.matches.length > 0" :standings="store.standings" />
+          <LeaderboardTable class="section-scroll-panel" v-if="tournament.matches.length > 0" :standings="store.standings" />
         </template>
 
         <template v-else-if="activeSection === 'opponents'">
-          <ProgressPanel
-            v-if="tournament.matches.length > 0"
-            :completed="store.completion.completed"
-            :total="store.completion.total"
-          />
-
-          <section v-if="tournament.matches.length > 0" class="card opponents-panel">
+          <section v-if="tournament.matches.length > 0" class="card opponents-panel section-scroll-panel">
             <div class="section-heading">
               <h2>Remaining Opponents</h2>
               <p>See who still needs to play each player before the schedule is complete.</p>
@@ -340,13 +332,17 @@ const onLeave = async () => {
 
 .sidebar__link {
   width: 100%;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   gap: 0.7rem;
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-main);
   font-weight: 600;
+}
+
+.sidebar__link span {
+  flex: 1 1 auto;
 }
 
 .sidebar__link svg {
@@ -378,6 +374,11 @@ const onLeave = async () => {
   gap: 1rem;
 }
 
+.header-row {
+  display: grid;
+  gap: 1rem;
+}
+
 .tournament-header {
   display: grid;
   gap: 1rem;
@@ -404,6 +405,14 @@ const onLeave = async () => {
 
 .tournament-header__note {
   margin: 0;
+}
+
+.header-row__progress {
+  align-self: stretch;
+}
+
+.section-scroll-panel {
+  max-height: min(70vh, 900px);
 }
 
 .claims-panel {
@@ -487,6 +496,11 @@ const onLeave = async () => {
 
   .tournament-layout {
     grid-template-columns: 250px minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .header-row--with-progress {
+    grid-template-columns: minmax(0, 1fr) 320px;
     align-items: stretch;
   }
 

@@ -158,6 +158,10 @@ watch(
   gap: 1rem;
 }
 
+.match-panel.section-scroll-panel {
+  overflow: auto;
+}
+
 .section-heading h2,
 .section-heading p,
 .round-card__header h3,

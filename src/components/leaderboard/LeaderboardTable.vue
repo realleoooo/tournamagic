@@ -51,6 +51,11 @@ defineProps<{
   gap: 1rem;
 }
 
+.leaderboard-panel.section-scroll-panel {
+  overflow: hidden;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
 .section-heading h2,
 .section-heading p {
   margin: 0;
@@ -62,7 +67,8 @@ defineProps<{
 }
 
 .leaderboard-table-wrap {
-  overflow-x: auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 .leaderboard-table {
