@@ -66,8 +66,8 @@ export const useTournamentStore = defineStore('tournament', () => {
     return fetched
   }
 
-  const createTournament = async (name: string) => {
-    const created = await withLoading(() => tournamentApi.createTournament({ name }))
+  const createTournament = async (name: string, players: string[], creatorPlayerName: string) => {
+    const created = await withLoading(() => tournamentApi.createTournament({ name, players, creatorPlayerName }))
     if (created) {
       tournament.value = created
       await refreshTournamentList()
@@ -104,8 +104,8 @@ export const useTournamentStore = defineStore('tournament', () => {
     return preview
   }
 
-  const joinTournament = async (code: string) => {
-    const joined = await withLoading(() => tournamentApi.joinTournament({ code }))
+  const joinTournament = async (code: string, playerId: string) => {
+    const joined = await withLoading(() => tournamentApi.joinTournament({ code, playerId }))
     if (joined) {
       tournament.value = joined
       joinPreview.value = undefined

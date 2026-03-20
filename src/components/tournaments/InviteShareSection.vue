@@ -28,18 +28,13 @@ const copyText = async (value: string, label: string) => {
   <section class="card grid">
     <div>
       <h2>Invite Players</h2>
-      <p class="muted">Share this QR code so players can join the tournament with their own account.</p>
+      <p class="muted">Players can only access this tournament after scanning the QR invite and claiming one of the tournament player names.</p>
     </div>
 
     <div class="invite-layout">
       <img :src="qrCodeUrl" :alt="`QR code for ${tournament.name}`" class="invite-qr" />
 
       <div class="grid invite-details">
-        <div class="invite-meta">
-          <span class="invite-label">Invite link</span>
-          <strong class="invite-code">Ready to scan</strong>
-        </div>
-
         <div class="invite-actions">
           <button type="button" @click="copyText(joinLink, 'Invite link')">Copy invite link</button>
         </div>
@@ -50,8 +45,8 @@ const copyText = async (value: string, label: string) => {
         </label>
 
         <p v-if="copyStatus" class="invite-feedback">{{ copyStatus }}</p>
-        <p v-if="!tournament.joinEnabled || tournament.status !== 'setup'" class="invite-warning">
-          Joining is currently unavailable because this tournament has already started.
+        <p v-if="!tournament.joinEnabled" class="invite-warning">
+          Joining is currently unavailable because this tournament is closed.
         </p>
       </div>
     </div>
@@ -80,22 +75,6 @@ const copyText = async (value: string, label: string) => {
 
 .invite-details {
   align-content: start;
-}
-
-.invite-meta {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.invite-label {
-  color: var(--text-soft);
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.invite-code {
-  font-size: 1.25rem;
 }
 
 .invite-actions {

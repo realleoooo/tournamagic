@@ -16,6 +16,9 @@ public class TournamentParticipantEntity {
     @Column(name = "tournament_id", nullable = false)
     private String tournamentId;
 
+    @Column(name = "player_id")
+    private String playerId;
+
     @Column(name = "user_email", nullable = false)
     private String userEmail;
 
@@ -29,6 +32,8 @@ public class TournamentParticipantEntity {
     public void setId(String id) { this.id = id; }
     public String getTournamentId() { return tournamentId; }
     public void setTournamentId(String tournamentId) { this.tournamentId = tournamentId; }
+    public String getPlayerId() { return playerId; }
+    public void setPlayerId(String playerId) { this.playerId = playerId; }
     public String getUserEmail() { return userEmail; }
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
     public String getUserName() { return userName; }

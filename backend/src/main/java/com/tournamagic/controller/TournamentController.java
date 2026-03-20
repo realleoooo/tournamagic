@@ -22,8 +22,11 @@ public class TournamentController {
     }
 
     @GetMapping
-    public List<TournamentSummaryDto> listTournaments() {
-        return tournamentService.listTournaments();
+    public List<TournamentSummaryDto> listTournaments(
+            @RequestHeader(value = AUTH_NAME_HEADER, required = false) String authName,
+            @RequestHeader(value = AUTH_EMAIL_HEADER, required = false) String authEmail
+    ) {
+        return tournamentService.listTournaments(requiredUser(authName, authEmail));
     }
 
     @PostMapping
@@ -33,7 +36,7 @@ public class TournamentController {
             @RequestHeader(value = AUTH_NAME_HEADER, required = false) String authName,
             @RequestHeader(value = AUTH_EMAIL_HEADER, required = false) String authEmail
     ) {
-        return tournamentService.createTournament(request, optionalUser(authName, authEmail));
+        return tournamentService.createTournament(request, requiredUser(authName, authEmail));
     }
 
     @GetMapping("/{id}")
@@ -42,7 +45,7 @@ public class TournamentController {
             @RequestHeader(value = AUTH_NAME_HEADER, required = false) String authName,
             @RequestHeader(value = AUTH_EMAIL_HEADER, required = false) String authEmail
     ) {
-        return tournamentService.getTournament(id, optionalUser(authName, authEmail));
+        return tournamentService.getTournament(id, requiredUser(authName, authEmail));
     }
 
     @PostMapping("/{id}/start")
@@ -74,11 +77,16 @@ public class TournamentController {
             @RequestHeader(value = AUTH_NAME_HEADER, required = false) String authName,
             @RequestHeader(value = AUTH_EMAIL_HEADER, required = false) String authEmail
     ) {
-        return tournamentService.joinTournament(request.code(), requiredUser(authName, authEmail));
+        return tournamentService.joinTournament(request.code(), request.playerId(), requiredUser(authName, authEmail));
     }
 
     @GetMapping("/{id}/standings")
-    public List<StandingDto> standings(@PathVariable String id) {
+    public List<StandingDto> standings(
+            @PathVariable String id,
+            @RequestHeader(value = AUTH_NAME_HEADER, required = false) String authName,
+            @RequestHeader(value = AUTH_EMAIL_HEADER, required = false) String authEmail
+    ) {
+        tournamentService.getTournament(id, requiredUser(authName, authEmail));
         return tournamentService.standings(id);
     }
 
@@ -90,7 +98,7 @@ public class TournamentController {
             @RequestHeader(value = AUTH_NAME_HEADER, required = false) String authName,
             @RequestHeader(value = AUTH_EMAIL_HEADER, required = false) String authEmail
     ) {
-        return tournamentService.updateMatchResult(id, matchId, request, optionalUser(authName, authEmail));
+        return tournamentService.updateMatchResult(id, matchId, request, requiredUser(authName, authEmail));
     }
 
     @DeleteMapping("/{id}/matches/{matchId}")
@@ -100,7 +108,7 @@ public class TournamentController {
             @RequestHeader(value = AUTH_NAME_HEADER, required = false) String authName,
             @RequestHeader(value = AUTH_EMAIL_HEADER, required = false) String authEmail
     ) {
-        return tournamentService.clearMatchResult(id, matchId, optionalUser(authName, authEmail));
+        return tournamentService.clearMatchResult(id, matchId, requiredUser(authName, authEmail));
     }
 
     @DeleteMapping("/{id}")

@@ -14,9 +14,9 @@ export type TournamentSummary = {
   totalMatches: number
 }
 
-type CreateTournamentPayload = { name: string }
+type CreateTournamentPayload = { name: string; players: string[]; creatorPlayerName: string }
 type MatchPayload = { winsA: number; winsB: number }
-type JoinTournamentPayload = { code: string }
+type JoinTournamentPayload = { code: string; playerId: string }
 
 const readId = () => window.localStorage.getItem(ID_KEY) ?? undefined
 const writeId = (id?: string) => {

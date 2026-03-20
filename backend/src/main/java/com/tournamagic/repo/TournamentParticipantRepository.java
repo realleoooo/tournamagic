@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface TournamentParticipantRepository extends JpaRepository<TournamentParticipantEntity, String> {
     List<TournamentParticipantEntity> findByTournamentIdOrderByJoinedAtAsc(String tournamentId);
+    List<TournamentParticipantEntity> findByUserEmailOrderByJoinedAtDesc(String userEmail);
     Optional<TournamentParticipantEntity> findByTournamentIdAndUserEmail(String tournamentId, String userEmail);
     void deleteByTournamentId(String tournamentId);
 }

@@ -12,7 +12,10 @@ const router = useRouter()
 
 const tournament = computed(() => store.tournament)
 const canStartTournament = computed(
-  () => tournament.value?.status === 'setup' && tournament.value.players.length >= 2
+  () =>
+    tournament.value?.status === 'setup' &&
+    tournament.value.players.length >= 2 &&
+    tournament.value.players.every((player) => player.claimedByEmail)
 )
 
 onMounted(async () => {
@@ -36,15 +39,13 @@ const onReset = async () => {
 }
 
 const onStart = async () => {
-  const started = await store.startTournament()
-  if (started) {
-    return
-  }
+  await store.startTournament()
 }
 
 const onLeave = async () => {
   const updated = await store.leaveJoinedTournament()
   if (updated) {
+    store.leaveTournament()
     router.replace('/')
   }
 }
@@ -62,29 +63,21 @@ const onLeave = async () => {
       <div class="grid">
         <section class="card">
           <h2>{{ tournament.name }}</h2>
-          <p>{{ tournament.players.length }} joined players · status: {{ tournament.status }}</p>
+          <p>{{ tournament.players.length }} players · status: {{ tournament.status }}</p>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom: 0.75rem;">
             <button type="button" class="secondary" @click="goOverview">Back to overview</button>
             <button class="warn" type="button" @click="onReset">Reset Tournament</button>
             <button v-if="canStartTournament" type="button" @click="onStart">Start Tournament</button>
-            <button
-              v-if="tournament.currentUserJoined && tournament.status === 'setup'"
-              type="button"
-              class="secondary"
-              @click="onLeave"
-            >
+            <button v-if="tournament.currentUserJoined" type="button" class="secondary" @click="onLeave">
               Leave Tournament
             </button>
           </div>
           <p v-if="tournament.status === 'setup'" class="muted">
-            Invite players with the QR code. Once at least 2 players have joined, start the tournament to generate matches.
-          </p>
-          <p v-else-if="!tournament.currentUserJoined" class="muted">
-            You are viewing this tournament, but you are not currently part of its player roster.
+            Every player slot must be claimed by a joined user before the tournament can start.
           </p>
         </section>
 
-        <InviteShareSection v-if="tournament.status === 'setup'" :tournament="tournament" />
+        <InviteShareSection :tournament="tournament" />
         <ProgressPanel v-if="tournament.matches.length > 0" :completed="store.completion.completed" :total="store.completion.total" />
         <MatchList
           :matches="tournament.matches"
@@ -96,18 +89,17 @@ const onLeave = async () => {
       </div>
       <div class="grid">
         <section class="card">
-          <h2>Joined Players</h2>
-          <p class="muted">Everyone who joined through the invite is part of the tournament roster.</p>
-          <ul v-if="tournament.participants.length > 0" class="participant-list">
-            <li v-for="participant in tournament.participants" :key="participant.email" class="participant-list__item">
+          <h2>Player Claims</h2>
+          <p class="muted">Joined users must claim one of these tournament players to access and play the event.</p>
+          <ul class="participant-list">
+            <li v-for="player in tournament.players" :key="player.id" class="participant-list__item">
               <div>
-                <strong>{{ participant.name }}</strong>
-                <p>{{ participant.email }}</p>
+                <strong>{{ player.name }}</strong>
+                <p>{{ player.claimedByName ? `${player.claimedByName} · ${player.claimedByEmail}` : 'Unclaimed' }}</p>
               </div>
-              <span>{{ new Date(participant.joinedAt).toLocaleDateString() }}</span>
+              <span>{{ player.claimedByEmail ? 'Joined' : 'Waiting' }}</span>
             </li>
           </ul>
-          <p v-else class="muted">No players have joined yet.</p>
         </section>
 
         <LeaderboardTable v-if="tournament.matches.length > 0" :standings="store.standings" />
