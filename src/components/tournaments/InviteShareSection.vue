@@ -25,16 +25,16 @@ const copyText = async (value: string, label: string) => {
 </script>
 
 <template>
-  <section class="card grid">
-    <div>
+  <section class="card invite-panel">
+    <div class="section-heading">
       <h2>Invite Players</h2>
-      <p class="muted">Players can only access this tournament after scanning the QR invite and claiming one of the tournament player names.</p>
+      <p>Share the QR code or direct link so each player can claim their own tournament seat.</p>
     </div>
 
     <div class="invite-layout">
       <img :src="qrCodeUrl" :alt="`QR code for ${tournament.name}`" class="invite-qr" />
 
-      <div class="grid invite-details">
+      <div class="invite-details">
         <div class="invite-actions">
           <button type="button" @click="copyText(joinLink, 'Invite link')">Copy invite link</button>
         </div>
@@ -54,8 +54,20 @@ const copyText = async (value: string, label: string) => {
 </template>
 
 <style scoped>
-.muted {
-  margin: 0.35rem 0 0;
+.invite-panel {
+  display: grid;
+  gap: 1rem;
+  height: 100%;
+  align-content: start;
+}
+
+.section-heading h2,
+.section-heading p {
+  margin: 0;
+}
+
+.section-heading p {
+  margin-top: 0.3rem;
   color: var(--text-soft);
 }
 
@@ -67,13 +79,15 @@ const copyText = async (value: string, label: string) => {
 .invite-qr {
   width: min(100%, 220px);
   aspect-ratio: 1;
-  border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--accent-arcane) 35%, transparent);
+  border-radius: 10px;
+  border: 1px solid var(--border-strong);
   background: white;
   padding: 0.75rem;
 }
 
 .invite-details {
+  display: grid;
+  gap: 0.85rem;
   align-content: start;
 }
 
@@ -89,19 +103,22 @@ const copyText = async (value: string, label: string) => {
   color: var(--text-soft);
 }
 
-.invite-feedback {
+.invite-feedback,
+.invite-warning {
   margin: 0;
+}
+
+.invite-feedback {
   color: var(--success);
 }
 
 .invite-warning {
-  margin: 0;
   color: var(--danger);
 }
 
 @media (min-width: 720px) {
   .invite-layout {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
   }
 }

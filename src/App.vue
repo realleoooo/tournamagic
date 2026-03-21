@@ -7,6 +7,20 @@
           <p>Draft Tournament Tracker</p>
         </div>
         <div class="topbar__actions">
+          <button
+            v-if="showTournamentMenuButton"
+            type="button"
+            class="secondary sidebar-trigger"
+            aria-label="Open tournament menu"
+            @click="toggleTournamentMenu"
+          >
+            <span class="sidebar-trigger__icon" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+            <span>Menu</span>
+          </button>
           <label class="theme-picker" for="theme-select">
             <span>Mana Theme</span>
             <select id="theme-select" v-model="selectedTheme" @change="applyTheme(selectedTheme)">
@@ -33,8 +47,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const THEME_STORAGE_KEY = 'tournamagic.theme'
@@ -52,10 +66,16 @@ type ThemeValue = (typeof themeOptions)[number]['value']
 const selectedTheme = ref<ThemeValue>('green')
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+const showTournamentMenuButton = computed(() => route.name === 'tournament')
 
 const applyTheme = (theme: ThemeValue) => {
   document.documentElement.dataset.theme = theme
   window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+}
+
+const toggleTournamentMenu = () => {
+  window.dispatchEvent(new CustomEvent('tournamagic:toggle-sidebar'))
 }
 
 const logout = () => {

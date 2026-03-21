@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { Match, Player } from '@/domain/models'
 import MatchTimer from '@/components/matches/MatchTimer.vue'
+import ScrollArea from '@/components/shared/ScrollArea.vue'
 
 const props = defineProps<{
   matches: Match[]
@@ -88,47 +89,177 @@ watch(
 </script>
 
 <template>
-  <section class="card">
-    <h2>Round Overview</h2>
-
-    <div style="display:flex; gap:0.5rem; margin-bottom:0.8rem; flex-wrap:wrap;">
-      <button
-        v-for="round in rounds"
-        :key="round.number"
-        type="button"
-        :class="{ secondary: selectedRound !== round.number }"
-        @click="selectedRound = round.number"
-      >
-        Round {{ round.number }}
-      </button>
+  <section class="card match-panel">
+    <div class="section-heading">
+      <h2>Round Overview</h2>
+      <p>Switch rounds to record results and keep pairings visible at a glance.</p>
     </div>
 
-    <p v-if="rounds.length === 0">No rounds generated yet.</p>
-
-    <div v-else class="card" style="margin:0.5rem 0;">
-      <strong>Round {{ selectedRound }}</strong>
-      <p style="margin-top:0.4rem; color: var(--text-soft);">
-        {{ selectedRoundMatches.length }} matches in this round
-      </p>
-
-      <div v-for="match in selectedRoundMatches" :key="match.id" class="card" style="margin:0.5rem 0;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <strong>{{ resolveName(match.playerAId) }} vs {{ resolveName(match.playerBId) }}</strong>
-          <span :style="{ color: match.status === 'completed' ? 'var(--ok)' : 'var(--text-soft)' }">{{ match.status }}</span>
-        </div>
-
-        <div style="display:flex; gap:0.5rem; margin-top:0.6rem; align-items:center;">
-          <input v-model.number="inputFor(match.id).winsA" type="number" min="0" max="2" style="width:70px" />
-          <span>-</span>
-          <input v-model.number="inputFor(match.id).winsB" type="number" min="0" max="2" style="width:70px" />
-          <button type="button" @click="emit('submit', match.id, inputFor(match.id).winsA, inputFor(match.id).winsB)">
-            Save
-          </button>
-          <button type="button" class="secondary" @click="emit('clear', match.id)">Undo</button>
-        </div>
-
-        <MatchTimer />
+    <ScrollArea class="match-panel__scroll">
+      <div v-if="rounds.length > 0" class="round-tabs">
+        <button
+          v-for="round in rounds"
+          :key="round.number"
+          type="button"
+          class="round-tabs__button"
+          :class="{ 'round-tabs__button--inactive': selectedRound !== round.number }"
+          @click="selectedRound = round.number"
+        >
+          Round {{ round.number }}
+        </button>
       </div>
-    </div>
+
+      <p v-if="rounds.length === 0" class="empty-state">No rounds generated yet.</p>
+
+      <div v-else class="round-card">
+        <div class="round-card__header">
+          <div>
+            <h3>Round {{ selectedRound }}</h3>
+            <p>{{ selectedRoundMatches.length }} matches in this round</p>
+          </div>
+        </div>
+
+        <article v-for="match in selectedRoundMatches" :key="match.id" class="match-row">
+          <div class="match-row__top">
+            <div>
+              <h4>{{ resolveName(match.playerAId) }} vs {{ resolveName(match.playerBId) }}</h4>
+              <p>{{ match.status === 'completed' ? 'Result recorded' : 'Waiting for result' }}</p>
+            </div>
+            <span :class="match.status === 'completed' ? 'match-status match-status--done' : 'match-status'">
+              {{ match.status }}
+            </span>
+          </div>
+
+          <div class="match-row__controls">
+            <label>
+              <span>{{ resolveName(match.playerAId) }}</span>
+              <input v-model.number="inputFor(match.id).winsA" type="number" min="0" max="2" />
+            </label>
+            <label>
+              <span>{{ resolveName(match.playerBId) }}</span>
+              <input v-model.number="inputFor(match.id).winsB" type="number" min="0" max="2" />
+            </label>
+            <div class="match-row__actions">
+              <button type="button" @click="emit('submit', match.id, inputFor(match.id).winsA, inputFor(match.id).winsB)">
+                Save
+              </button>
+              <button type="button" class="secondary" @click="emit('clear', match.id)">Undo</button>
+            </div>
+          </div>
+
+          <MatchTimer />
+        </article>
+      </div>
+    </ScrollArea>
   </section>
 </template>
+
+<style scoped>
+.match-panel,
+.round-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.match-panel.section-scroll-panel {
+  min-height: 0;
+}
+
+.match-panel__scroll {
+  min-height: 0;
+}
+
+.section-heading h2,
+.section-heading p,
+.round-card__header h3,
+.round-card__header p,
+.match-row h4,
+.match-row p {
+  margin: 0;
+}
+
+.section-heading p,
+.round-card__header p,
+.match-row p,
+.match-row label span {
+  color: var(--text-soft);
+}
+
+.section-heading p,
+.round-card__header p,
+.match-row p {
+  margin-top: 0.3rem;
+}
+
+.round-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.round-tabs__button {
+  background: color-mix(in srgb, var(--accent-arcane) 18%, var(--bg-surface));
+}
+
+.round-tabs__button--inactive {
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--text-main);
+}
+
+.empty-state {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.round-card {
+  padding-top: 0.25rem;
+}
+
+.match-row {
+  display: grid;
+  gap: 0.85rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.match-row__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.match-status {
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.match-status--done {
+  color: var(--accent-gold);
+}
+
+.match-row__controls {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.match-row__controls label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.match-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+@media (min-width: 720px) {
+  .match-row__controls {
+    grid-template-columns: repeat(2, minmax(0, 140px)) auto;
+    align-items: end;
+  }
+}
+</style>
