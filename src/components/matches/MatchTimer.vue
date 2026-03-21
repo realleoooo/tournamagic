@@ -112,20 +112,26 @@ watch(
 
 <template>
   <div class="match-timer">
-    <div class="timer-header">
-      <p class="timer-label">Match Timer ({{ timer.config.value.mode === 'count_up' ? 'Count up' : 'Count down' }})</p>
-      <button type="button" class="secondary" @click="openSettings">Timer Settings</button>
-    </div>
+    <div class="timer-strip">
+      <div class="timer-strip__meta">
+        <p class="timer-label">Match Timer</p>
+        <p class="timer-mode">{{ timer.config.value.mode === 'count_up' ? 'Count up' : 'Count down' }}</p>
+        <div class="timer-controls">
+          <button type="button" class="timer-control" :disabled="timer.running.value || timer.isExpired.value" @click="timer.start">Start</button>
+          <button type="button" class="timer-control" :disabled="!timer.running.value" @click="timer.pause">Pause</button>
+          <button type="button" class="timer-control" @click="timer.reset">Reset</button>
+        </div>
+      </div>
 
-    <p class="timer-display" :class="{ expired: timer.isExpired.value }">{{ displayValue }}</p>
+      <div class="timer-strip__clock">
+        <p class="timer-display" :class="{ expired: timer.isExpired.value }">{{ displayValue }}</p>
+        <p v-if="timer.isExpired.value" class="timer-expired">Time is up!</p>
+        <p v-else-if="reminderMessage" class="timer-reminder">{{ reminderMessage }}</p>
+      </div>
 
-    <p v-if="timer.isExpired.value" class="timer-expired">Time is up!</p>
-    <p v-if="reminderMessage" class="timer-reminder">{{ reminderMessage }}</p>
-
-    <div class="timer-controls">
-      <button type="button" :disabled="timer.running.value || timer.isExpired.value" @click="timer.start">Start</button>
-      <button type="button" class="secondary" :disabled="!timer.running.value" @click="timer.pause">Pause</button>
-      <button type="button" class="secondary" @click="timer.reset">Reset</button>
+      <div class="timer-strip__actions">
+        <button type="button" class="secondary timer-settings" @click="openSettings">Timer Settings</button>
+      </div>
     </div>
 
     <div v-if="isSettingsOpen" class="modal-backdrop" @click.self="closeSettings">
@@ -172,56 +178,106 @@ watch(
 
 <style scoped>
 .match-timer {
-  margin-top: 0.85rem;
-  padding-top: 0.8rem;
-  border-top: 1px solid color-mix(in srgb, var(--accent-arcane) 35%, transparent);
+  border: 1px solid #7e5524;
+  background:
+    linear-gradient(180deg, rgba(52, 31, 19, 0.95), rgba(26, 15, 10, 0.98)),
+    #24170f;
+  box-shadow: inset 0 0 0 1px rgba(214, 171, 92, 0.12);
 }
 
-.timer-header,
-.timer-controls,
-.modal-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: space-between;
+.timer-strip {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+}
+
+.timer-strip__meta {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 180px;
+}
+
+.timer-label,
+.timer-mode,
+.timer-expired,
+.timer-reminder,
+.settings-error {
+  margin: 0;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
 }
 
 .timer-label {
-  margin: 0;
-  color: var(--text-soft);
-  font-size: 0.85rem;
+  color: #f3deb4;
+  font-size: 1rem;
+}
+
+.timer-mode {
+  color: #dcbf91;
+  font-size: 0.92rem;
+}
+
+.timer-controls,
+.modal-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.timer-control {
+  background:
+    linear-gradient(180deg, rgba(86, 59, 33, 0.96), rgba(42, 27, 17, 0.98)),
+    #41291a;
+  border-color: rgba(174, 128, 66, 0.82);
+  color: #f1dcaf;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.86rem;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+}
+
+.timer-control:hover {
+  background:
+    linear-gradient(180deg, rgba(100, 68, 38, 0.96), rgba(50, 31, 19, 0.98)),
+    #4a2f1d;
+}
+
+.timer-strip__clock {
+  text-align: center;
 }
 
 .timer-display {
-  margin: 0.2rem 0 0.5rem;
-  font-size: 2rem;
+  margin: 0;
+  color: #ffe1a2;
+  font-size: 3.1rem;
   line-height: 1;
   font-weight: 700;
   letter-spacing: 0.08rem;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+  text-shadow: 0 0 18px rgba(255, 168, 57, 0.24);
 }
 
 .timer-display.expired,
 .timer-expired,
 .settings-error {
-  color: var(--danger);
-}
-
-.timer-expired,
-.timer-reminder,
-.settings-error {
-  margin: 0 0 0.6rem;
-  font-weight: 700;
+  color: #ef9a73;
 }
 
 .timer-reminder {
-  color: var(--accent-gold);
+  color: #f5d189;
+}
+
+.timer-settings {
+  min-width: 162px;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
 }
 
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background:
+    radial-gradient(circle at center, rgba(120, 74, 33, 0.18), rgba(0, 0, 0, 0.72)),
+    rgba(0, 0, 0, 0.68);
   display: grid;
   place-items: center;
   z-index: 25;
@@ -229,26 +285,144 @@ watch(
 }
 
 .modal-card {
+  position: relative;
   width: min(460px, 100%);
+  border: 1px solid #8d6030;
+  background:
+    linear-gradient(180deg, rgba(92, 55, 33, 0.24), rgba(33, 20, 14, 0.18)),
+    rgba(66, 40, 26, 0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(237, 190, 105, 0.16),
+    0 20px 34px rgba(0, 0, 0, 0.34);
+  padding: 2rem 1.5rem 1.4rem;
+}
+
+.modal-card::before,
+.modal-card::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  transform: rotate(45deg);
+  border: 1px solid rgba(223, 177, 95, 0.78);
+  background: linear-gradient(135deg, rgba(255, 229, 163, 0.9), rgba(153, 91, 30, 0.45));
+  box-shadow: 0 0 12px rgba(255, 187, 72, 0.26);
+}
+
+.modal-card::before {
+  top: -9px;
+}
+
+.modal-card::after {
+  bottom: -9px;
+}
+
+.modal-card h3 {
+  margin: 0 0 1.1rem;
+  color: #f5dfb3;
+  text-align: center;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+  font-size: 1.7rem;
 }
 
 .settings-group {
   display: grid;
-  gap: 0.6rem;
-  margin-bottom: 0.8rem;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .settings-group label {
   display: grid;
-  gap: 0.3rem;
-  color: var(--text-soft);
-  font-size: 0.9rem;
+  gap: 0.45rem;
+  color: #efdcb0;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+  font-size: 0.98rem;
+}
+
+.settings-group input,
+.settings-group select {
+  background:
+    linear-gradient(180deg, rgba(23, 16, 12, 0.96), rgba(19, 14, 11, 0.98)),
+    #18120e;
+  border-color: rgba(174, 128, 69, 0.84);
+  color: #f2ddb6;
+  border-radius: 12px;
+  padding: 0.82rem 0.95rem;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.36);
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+  font-size: 0.98rem;
 }
 
 .checkbox-label {
   display: flex !important;
   align-items: center;
-  gap: 0.45rem;
-  color: var(--text-main) !important;
+  gap: 0.6rem;
+  color: #f2ddb6 !important;
+}
+
+.checkbox-label input {
+  width: 18px;
+  height: 18px;
+  accent-color: #7aa54f;
+  padding: 0;
+  box-shadow: none;
+}
+
+.modal-actions {
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.modal-actions button {
+  min-width: 144px;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+}
+
+.modal-actions .secondary {
+  background:
+    linear-gradient(180deg, rgba(92, 61, 35, 0.94), rgba(44, 28, 19, 0.98)),
+    #432c1d;
+  border-color: rgba(171, 127, 67, 0.72);
+  color: #efdcb0;
+}
+
+.modal-actions .secondary:hover {
+  background:
+    linear-gradient(180deg, rgba(105, 71, 40, 0.96), rgba(51, 33, 21, 0.98)),
+    #4c3120;
+}
+
+.modal-actions button:not(.secondary) {
+  background:
+    linear-gradient(180deg, rgba(130, 170, 78, 0.96), rgba(59, 98, 36, 0.98)),
+    #618f43;
+  border-color: rgba(211, 173, 103, 0.8);
+  color: #faf2d6;
+}
+
+.modal-actions button:not(.secondary):hover {
+  background:
+    linear-gradient(180deg, rgba(143, 187, 87, 0.96), rgba(69, 110, 44, 0.98)),
+    #6e9d4d;
+}
+
+@media (max-width: 980px) {
+  .timer-strip {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .timer-strip__meta,
+  .timer-strip__actions {
+    justify-items: center;
+  }
+
+  .timer-controls {
+    justify-content: center;
+  }
 }
 </style>

@@ -37,29 +37,38 @@ const submitLogin = (values: { email: string; password: string; name: string }) 
 </script>
 
 <template>
-  <AuthForm
-    ref="formRef"
-    mode="login"
-    title="Welcome back"
-    description="Log in to continue managing your tournaments."
-    submit-label="Log in"
-    :initial-error="formError"
-    @submit="submitLogin"
-  >
-    <p class="auth-link">
-      Don't have an account?
-      <RouterLink :to="{ path: '/register', query: { redirect: redirectPath } }">Register</RouterLink>
-    </p>
-  </AuthForm>
+  <div class="auth-screen">
+    <AuthForm
+      ref="formRef"
+      mode="login"
+      title="Welcome back"
+      description="Log in to continue managing your tournaments."
+      submit-label="Log in"
+      :initial-error="formError"
+      @submit="submitLogin"
+    >
+      <p class="auth-link">
+        Don't have an account?
+        <RouterLink :to="{ path: '/register', query: { redirect: redirectPath } }">Register</RouterLink>
+      </p>
+    </AuthForm>
+  </div>
 </template>
 
 <style scoped>
+.auth-screen {
+  min-height: 100%;
+}
+
 .auth-link {
-  margin-top: 1rem;
-  color: var(--text-soft);
+  margin-top: 1.25rem;
+  text-align: center;
+  color: #e7cea0;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+  font-size: 1rem;
 }
 
 a {
-  color: var(--accent-gold);
+  color: #f4d27d;
 }
 </style>
