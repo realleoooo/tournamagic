@@ -1,13 +1,7 @@
-* {
-  box-sizing: border-box;
+* { box-sizing: border-box; }
+html {
+  scrollbar-gutter: stable;
 }
-
-html,
-body,
-#app {
-  min-height: 100%;
-}
-
 body {
   margin: 0;
   font-family: Aptos, Bahnschrift, "Helvetica Neue", sans-serif;
@@ -15,55 +9,13 @@ body {
   color: var(--text-main);
 }
 
-body,
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-button,
-input,
-select,
-textarea {
-  outline: none;
-}
-
-.app-bg {
-  min-height: 100vh;
-  background: var(--bg-main);
-  display: grid;
-  grid-template-rows: auto 1fr;
-}
-
-.app-bg--invite {
-  background:
-    radial-gradient(circle at 16% 18%, rgba(27, 162, 120, 0.08), transparent 18%),
-    radial-gradient(circle at 82% 9%, rgba(224, 169, 76, 0.12), transparent 20%),
-    linear-gradient(180deg, #140d09, #0d0807 52%, #120b08);
-}
-
+.app-bg { min-height: 100vh; }
 .topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  border-bottom: 1px solid var(--border-strong);
-  background: color-mix(in srgb, var(--bg-main) 92%, black);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-arcane) 45%, transparent);
+  padding: 1rem var(--page-gutter);
 }
-
-.topbar--invite {
-  border-bottom-color: #7e5c33;
-  background:
-    linear-gradient(180deg, rgba(74, 48, 31, 0.92), rgba(33, 22, 16, 0.96)),
-    #1b120d;
-  box-shadow:
-    inset 0 -1px 0 rgba(221, 176, 98, 0.14),
-    0 10px 24px rgba(0, 0, 0, 0.28);
-}
-
 .topbar__content {
-  max-width: 1400px;
+  width: min(100%, var(--content-max-width));
   margin: 0 auto;
   padding: 0.9rem 1.25rem 1rem;
   display: grid;
@@ -278,23 +230,9 @@ textarea {
 }
 
 .layout {
-  max-width: 1400px;
+  width: min(calc(100% - (var(--page-gutter) * 2)), var(--content-max-width));
   margin: 0 auto;
-  padding: 1.25rem;
-}
-
-.layout--tournament {
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.layout--invite {
-  padding-top: 0.95rem;
-}
-
-.layout--setup {
-  padding-top: 1.25rem;
+  padding: 1rem 0;
 }
 
 .card {
@@ -424,49 +362,12 @@ ul {
   display: grid;
   gap: 1rem;
 }
-
+.grid > * {
+  min-width: 0;
+}
 @media (min-width: 900px) {
   .grid.two {
-    grid-template-columns: 2fr 1fr;
-  }
-}
-
-@media (max-width: 959px) {
-  .layout {
-    padding: 1rem;
-  }
-
-  .layout--tournament {
-    height: 100%;
-  }
-
-  .menu-toggle {
-    display: inline-flex;
-  }
-}
-
-@media (max-width: 720px) {
-  .topbar__row {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .topbar__actions,
-  .tournament-actions {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .topbar__row--auth {
-    display: flex;
-  }
-
-  .topbar__row--auth .brand-block {
-    padding-left: 4.6rem;
-  }
-
-  .topbar__row--auth .topbar__actions {
-    width: 100%;
-    justify-self: auto;
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    align-items: start;
   }
 }

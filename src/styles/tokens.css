@@ -9,10 +9,10 @@
   --accent-gold: #cdb874;
   --ok: #68b364;
   --success: var(--ok);
-  --danger: #d85c52;
-  --border-subtle: #2d372d;
-  --border-strong: #3a463a;
-  --radius: 10px;
+  --danger: #ef4444;
+  --radius: 14px;
+  --content-max-width: 1100px;
+  --page-gutter: clamp(1rem, 2vw, 1.5rem);
 }
 
 :root[data-theme='red'] {
