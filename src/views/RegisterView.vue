@@ -36,29 +36,38 @@ const submitRegistration = (values: { name: string; email: string; password: str
 </script>
 
 <template>
-  <AuthForm
-    ref="formRef"
-    mode="register"
-    title="Create your account"
-    description="Sign up to manage your tournaments and keep your progress saved on this device."
-    submit-label="Register"
-    :initial-error="formError"
-    @submit="submitRegistration"
-  >
-    <p class="auth-link">
-      Already have an account?
-      <RouterLink :to="{ path: '/login', query: { redirect: redirectPath } }">Log in</RouterLink>
-    </p>
-  </AuthForm>
+  <div class="auth-screen">
+    <AuthForm
+      ref="formRef"
+      mode="register"
+      title="Create your account"
+      description="Sign up to manage your tournaments and keep your progress saved on this device."
+      submit-label="Register"
+      :initial-error="formError"
+      @submit="submitRegistration"
+    >
+      <p class="auth-link">
+        Already have an account?
+        <RouterLink :to="{ path: '/login', query: { redirect: redirectPath } }">Log in</RouterLink>
+      </p>
+    </AuthForm>
+  </div>
 </template>
 
 <style scoped>
+.auth-screen {
+  min-height: 100%;
+}
+
 .auth-link {
-  margin-top: 1rem;
-  color: var(--text-soft);
+  margin-top: 1.25rem;
+  text-align: center;
+  color: #e7cea0;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+  font-size: 1rem;
 }
 
 a {
-  color: var(--accent-gold);
+  color: #f4d27d;
 }
 </style>

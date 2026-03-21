@@ -1,91 +1,472 @@
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
-  font-family: Inter, system-ui, sans-serif;
-  background: radial-gradient(circle at top, color-mix(in srgb, var(--accent-arcane) 25%, #06070b), var(--bg-main));
+  font-family: Aptos, Bahnschrift, "Helvetica Neue", sans-serif;
+  background: var(--bg-main);
   color: var(--text-main);
 }
 
-.app-bg { min-height: 100vh; }
-.topbar {
-  border-bottom: 1px solid color-mix(in srgb, var(--accent-arcane) 45%, transparent);
-  padding: 1rem;
+body,
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
+
+button,
+input,
+select,
+textarea {
+  outline: none;
+}
+
+.app-bg {
+  min-height: 100vh;
+  background: var(--bg-main);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.app-bg--invite {
+  background:
+    radial-gradient(circle at 16% 18%, rgba(27, 162, 120, 0.08), transparent 18%),
+    radial-gradient(circle at 82% 9%, rgba(224, 169, 76, 0.12), transparent 20%),
+    linear-gradient(180deg, #140d09, #0d0807 52%, #120b08);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--bg-main) 92%, black);
+}
+
+.topbar--invite {
+  border-bottom-color: #7e5c33;
+  background:
+    linear-gradient(180deg, rgba(74, 48, 31, 0.92), rgba(33, 22, 16, 0.96)),
+    #1b120d;
+  box-shadow:
+    inset 0 -1px 0 rgba(221, 176, 98, 0.14),
+    0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
 .topbar__content {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 0.9rem 1.25rem 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.topbar__row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
-.topbar h1 { margin: 0; color: var(--accent-gold); }
-.topbar p { margin: 0.25rem 0 0; color: var(--text-soft); }
-.topbar__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
+
+.topbar__content--auth {
+  max-width: 1500px;
 }
-.auth-status {
+
+.topbar__row--auth {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+}
+
+.topbar__row--tournament {
+  padding-top: 0.1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.brand-block {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.9rem;
+}
+
+.topbar__row--auth .brand-block {
+  justify-self: center;
+  position: relative;
+  padding-left: 5.25rem;
+}
+
+.topbar__row--auth .brand-block::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4.1rem;
+  height: 4.1rem;
+  margin-top: -2.05rem;
+  border-radius: 999px;
+  border: 1px solid rgba(221, 176, 98, 0.68);
+  background:
+    radial-gradient(circle at center, rgba(255, 232, 173, 0.98), rgba(255, 174, 64, 0.68) 22%, rgba(106, 57, 20, 0.62) 44%, rgba(26, 14, 10, 0) 48%),
+    radial-gradient(circle at center, rgba(255, 204, 112, 0.18), rgba(0, 0, 0, 0) 70%);
+  box-shadow:
+    0 0 16px rgba(255, 177, 61, 0.26),
+    inset 0 0 0 1px rgba(255, 232, 173, 0.16);
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.topbar p {
+  margin: 0.2rem 0 0;
   color: var(--text-soft);
-  font-size: 0.9rem;
 }
+
+.topbar--invite h1,
+.topbar--invite .brand-block h1,
+.topbar--invite .tournament-summary strong,
+.topbar--invite .theme-picker span,
+.topbar--invite .auth-status strong {
+  color: #f1ddae;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+}
+
+.topbar--invite p,
+.topbar--invite .tournament-summary,
+.topbar--invite .theme-picker,
+.topbar--invite .auth-status,
+.topbar--invite .auth-status span {
+  color: #d5bf98;
+}
+
+.topbar__actions,
+.auth-status,
+.theme-picker,
+.tournament-actions,
+.tournament-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .theme-picker {
+  gap: 0.6rem;
+}
+
+.theme-swatches {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.45rem;
+}
+
+.theme-swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(214, 175, 99, 0.48);
+  background: #222;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 187, 0.18),
+    0 0 0 1px rgba(37, 23, 15, 0.48);
+}
+
+.theme-swatch:hover {
+  filter: brightness(1.08);
+}
+
+.theme-swatch--active {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 187, 0.24),
+    0 0 0 1px rgba(37, 23, 15, 0.48),
+    0 0 10px rgba(245, 194, 91, 0.24);
+}
+
+.theme-swatch--green {
+  background: radial-gradient(circle at 35% 35%, #89f08a, #2d7f2a 62%, #152310);
+}
+
+.theme-swatch--red {
+  background: radial-gradient(circle at 35% 35%, #ffb28d, #ad3b28 62%, #291510);
+}
+
+.theme-swatch--blue {
+  background: radial-gradient(circle at 35% 35%, #9dd2ff, #2b64aa 62%, #111a29);
+}
+
+.theme-swatch--white {
+  background: radial-gradient(circle at 35% 35%, #fff1b7, #b98b2c 62%, #2c2313);
+}
+
+.theme-swatch--black {
+  background: radial-gradient(circle at 35% 35%, #b9b8b3, #44454d 62%, #111216);
+}
+
+.topbar__actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.auth-status,
+.theme-picker,
+.tournament-summary {
   color: var(--text-soft);
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.95rem;
 }
+
+.tournament-summary {
+  flex-wrap: wrap;
+}
+
+.tournament-summary strong {
+  color: var(--text-main);
+}
+
+.tournament-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.auth-status__user {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.auth-status__user strong,
+.auth-status__user span {
+  line-height: 1.05;
+}
+
+.auth-status__user span {
+  font-size: 0.82rem;
+}
+
+.menu-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu-toggle span {
+  width: 16px;
+  height: 2px;
+  background: currentColor;
+}
+
+.topbar--invite .menu-toggle {
+  border-color: rgba(195, 145, 72, 0.72);
+  background:
+    linear-gradient(180deg, rgba(89, 59, 31, 0.88), rgba(39, 25, 16, 0.96)),
+    #291a12;
+  color: #efd8a9;
+}
+
 .layout {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.25rem;
 }
+
+.layout--tournament {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.layout--invite {
+  padding-top: 0.95rem;
+}
+
+.layout--setup {
+  padding-top: 1.25rem;
+}
+
 .card {
-  background: linear-gradient(180deg, var(--bg-elevated), var(--bg-surface));
-  border: 1px solid color-mix(in srgb, var(--accent-arcane) 35%, transparent);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   padding: 1rem;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-arcane) 25%, transparent), 0 6px 24px rgba(0, 0, 0, 0.35);
 }
+
 button {
-  border: 0;
-  border-radius: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   padding: 0.6rem 0.9rem;
   font-weight: 600;
   background: var(--accent-arcane);
-  color: white;
+  color: #f5f7f2;
   cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
-button.secondary { background: #374151; }
-button.warn { background: var(--danger); }
-input, select {
-  background: color-mix(in srgb, var(--bg-main) 85%, black);
+
+button:hover {
+  background: color-mix(in srgb, var(--accent-arcane) 88%, white);
+}
+
+button.secondary {
+  background: var(--bg-muted);
+  border-color: var(--border-strong);
   color: var(--text-main);
-  border: 1px solid color-mix(in srgb, var(--accent-arcane) 45%, transparent);
+}
+
+button.secondary:hover {
+  background: var(--bg-elevated);
+}
+
+button.warn {
+  background: var(--danger);
+}
+
+.topbar--invite button {
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(115, 78, 42, 0.88), rgba(51, 33, 21, 0.98)),
+    #4a3020;
+  border-color: rgba(205, 159, 84, 0.72);
+  color: #f4e1b9;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 229, 173, 0.24),
+    0 0 0 1px rgba(52, 33, 20, 0.6);
+}
+
+.topbar--invite button:hover {
+  background:
+    linear-gradient(180deg, rgba(142, 98, 53, 0.92), rgba(62, 39, 23, 0.98)),
+    #5b3a24;
+}
+
+.topbar--invite button.warn {
+  background:
+    linear-gradient(180deg, rgba(145, 63, 52, 0.92), rgba(88, 34, 30, 0.98)),
+    #6b2a24;
+}
+
+.topbar--invite button.warn:hover {
+  background:
+    linear-gradient(180deg, rgba(165, 74, 61, 0.94), rgba(99, 40, 34, 0.98)),
+    #7a332c;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  background: var(--bg-main);
+  color: var(--text-main);
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
-  padding: 0.55rem;
+  padding: 0.6rem 0.65rem;
 }
 
-@media (max-width: 720px) {
-  .topbar__content {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .topbar__actions {
-    flex-direction: column;
-  }
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent-arcane);
 }
+
+.topbar--invite select {
+  background:
+    linear-gradient(180deg, rgba(30, 19, 14, 0.95), rgba(23, 15, 12, 0.98)),
+    #16110d;
+  border-color: rgba(168, 126, 71, 0.8);
+  color: #ead7ac;
+}
+
+.topbar--invite .topbar__content {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.topbar--invite .topbar__row--tournament {
+  padding-top: 0.7rem;
+}
+
+.topbar--invite .topbar__row--auth .topbar__actions {
+  justify-self: end;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+a {
+  color: var(--accent-gold);
+}
+
+ul {
+  padding-left: 1.15rem;
+}
+
 .grid {
   display: grid;
   gap: 1rem;
 }
+
 @media (min-width: 900px) {
-  .grid.two { grid-template-columns: 2fr 1fr; }
+  .grid.two {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+@media (max-width: 959px) {
+  .layout {
+    padding: 1rem;
+  }
+
+  .layout--tournament {
+    height: 100%;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 720px) {
+  .topbar__row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbar__actions,
+  .tournament-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .topbar__row--auth {
+    display: flex;
+  }
+
+  .topbar__row--auth .brand-block {
+    padding-left: 4.6rem;
+  }
+
+  .topbar__row--auth .topbar__actions {
+    width: 100%;
+    justify-self: auto;
+  }
 }
