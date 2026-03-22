@@ -69,8 +69,11 @@ const shell = useTournamentShell()
 
 const isTournamentRoute = computed(() => route.name === 'tournament')
 const isSetupRoute = computed(() => route.name === 'setup')
+const isJoinRoute = computed(() => route.name === 'join-tournament')
 const isAuthRoute = computed(() => route.name === 'login' || route.name === 'register')
-const isFantasyRoute = computed(() => isTournamentRoute.value || isSetupRoute.value || isAuthRoute.value)
+const isFantasyRoute = computed(
+  () => isTournamentRoute.value || isSetupRoute.value || isJoinRoute.value || isAuthRoute.value
+)
 
 const logout = () => {
   authStore.logout()
