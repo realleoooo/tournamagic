@@ -22,6 +22,23 @@ export const useTournamentStore = defineStore('tournament', () => {
     return { completed, total }
   })
 
+  const syncTournamentSummary = (updatedTournament: Tournament) => {
+    const existingIndex = tournaments.value.findIndex((item) => item.id === updatedTournament.id)
+
+    if (existingIndex === -1) {
+      return
+    }
+
+    tournaments.value[existingIndex] = {
+      ...tournaments.value[existingIndex],
+      name: updatedTournament.name,
+      status: updatedTournament.status,
+      playerCount: updatedTournament.players.length,
+      completedMatches: updatedTournament.matches.filter((match) => match.status === 'completed').length,
+      totalMatches: updatedTournament.matches.length
+    }
+  }
+
   const withLoading = async <T>(fn: () => Promise<T>): Promise<T | undefined> => {
     loading.value = true
     error.value = undefined
@@ -121,7 +138,7 @@ export const useTournamentStore = defineStore('tournament', () => {
     )
     if (updated) {
       tournament.value = updated
-      await refreshTournamentList()
+      syncTournamentSummary(updated)
     }
   }
 
@@ -130,7 +147,7 @@ export const useTournamentStore = defineStore('tournament', () => {
     const updated = await withLoading(() => tournamentApi.clearResult(tournament.value!.id, matchId))
     if (updated) {
       tournament.value = updated
-      await refreshTournamentList()
+      syncTournamentSummary(updated)
     }
   }
 

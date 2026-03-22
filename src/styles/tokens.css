@@ -13,6 +13,8 @@
   --border-subtle: #2d372d;
   --border-strong: #3a463a;
   --radius: 10px;
+  --page-shell-max: 1400px;
+  --page-gutter: clamp(1rem, 2vw, 1.5rem);
 }
 
 :root[data-theme='red'] {

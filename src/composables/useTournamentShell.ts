@@ -4,7 +4,8 @@ export type TournamentSection = 'overview' | 'leaderboard' | 'opponents' | 'invi
 
 const state = reactive({
   activeSection: 'overview' as TournamentSection,
-  sidebarOpen: false
+  sidebarOpen: false,
+  selectedRound: 1
 })
 
 export const useTournamentShell = () => {
@@ -25,11 +26,16 @@ export const useTournamentShell = () => {
     state.sidebarOpen = !state.sidebarOpen
   }
 
+  const setSelectedRound = (round: number) => {
+    state.selectedRound = round
+  }
+
   return {
     state: readonly(state),
     setActiveSection,
     openSidebar,
     closeSidebar,
-    toggleSidebar
+    toggleSidebar,
+    setSelectedRound
   }
 }

@@ -11,7 +11,7 @@ const copyStatus = ref('')
 const joinLink = computed(() => `${window.location.origin}/join/${props.tournament.joinCode}`)
 const qrCodeUrl = computed(
   () =>
-    `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinLink.value)}`
+    `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(joinLink.value)}`
 )
 
 const copyText = async (value: string, label: string) => {
@@ -60,9 +60,11 @@ const copyText = async (value: string, label: string) => {
 
       <ul class="claims-list">
         <li v-for="player in tournament.players" :key="player.id" class="claims-list__item">
-          <div class="claims-list__identity">
-            <strong>{{ player.name }}</strong>
-            <p>{{ player.claimedByName ? `${player.claimedByName} - ${player.claimedByEmail}` : 'Unclaimed' }}</p>
+          <div class="claims-list__main">
+            <div class="claims-list__identity">
+              <strong class="claims-list__name">{{ player.name }}</strong>
+              <p>{{ player.claimedByName ? `${player.claimedByName} - ${player.claimedByEmail}` : 'Unclaimed' }}</p>
+            </div>
           </div>
 
           <span :class="['claim-status', { 'claim-status--waiting': !player.claimedByEmail }]">
@@ -77,8 +79,8 @@ const copyText = async (value: string, label: string) => {
 <style scoped>
 .invite-page {
   display: grid;
-  grid-template-columns: minmax(360px, 0.94fr) minmax(320px, 1.06fr);
-  gap: 1.25rem;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(320px, 1.2fr);
+  gap: 0.85rem;
   min-height: 100%;
 }
 
@@ -119,18 +121,18 @@ const copyText = async (value: string, label: string) => {
 }
 
 .invite-card--qr {
-  padding: 1.6rem 1.35rem 1.35rem;
+  padding: 0.9rem 0.85rem 0.8rem;
   display: grid;
   justify-items: center;
   align-content: start;
-  gap: 1.15rem;
+  gap: 0.65rem;
 }
 
 .invite-card__frame {
   position: relative;
-  width: min(100%, 430px);
+  width: min(100%, 272px);
   aspect-ratio: 0.95;
-  padding: 2.2rem;
+  padding: 1rem;
   display: grid;
   place-items: center;
   background:
@@ -139,21 +141,21 @@ const copyText = async (value: string, label: string) => {
   border: 1px solid rgba(177, 129, 67, 0.8);
   box-shadow:
     inset 0 0 0 1px rgba(233, 194, 123, 0.16),
-    0 0 0 8px rgba(18, 11, 9, 0.22);
+    0 0 0 6px rgba(18, 11, 9, 0.22);
 }
 
 .invite-card__frame::before,
 .invite-card__frame::after {
   content: '';
   position: absolute;
-  inset: 14px;
+  inset: 8px;
   border: 1px solid rgba(214, 167, 92, 0.2);
   pointer-events: none;
 }
 
 .invite-card__halo {
   position: absolute;
-  inset: 18%;
+  inset: 22%;
   border-radius: 999px;
   border: 1px solid rgba(241, 189, 88, 0.24);
   box-shadow:
@@ -164,20 +166,20 @@ const copyText = async (value: string, label: string) => {
 .invite-qr {
   position: relative;
   z-index: 1;
-  width: min(100%, 255px);
+  width: min(100%, 164px);
   aspect-ratio: 1;
-  border: 6px solid #eadfc6;
+  border: 4px solid #eadfc6;
   background: #f6f0de;
-  padding: 0.7rem;
+  padding: 0.35rem;
   box-shadow:
     0 0 0 1px rgba(91, 58, 27, 0.78),
-    0 10px 24px rgba(0, 0, 0, 0.18);
+    0 8px 18px rgba(0, 0, 0, 0.18);
 }
 
 .invite-details {
-  width: min(100%, 360px);
+  width: min(100%, 272px);
   display: grid;
-  gap: 0.75rem;
+  gap: 0.45rem;
 }
 
 .invite-actions {
@@ -186,7 +188,7 @@ const copyText = async (value: string, label: string) => {
 }
 
 .invite-button {
-  min-width: 228px;
+  min-width: 168px;
   background:
     linear-gradient(180deg, rgba(146, 111, 48, 0.78), rgba(67, 44, 22, 0.98)),
     #5e3e22;
@@ -196,7 +198,7 @@ const copyText = async (value: string, label: string) => {
     inset 0 1px 0 rgba(255, 236, 181, 0.25),
     0 0 0 1px rgba(78, 53, 28, 0.5);
   font-family: Cambria, "Palatino Linotype", Georgia, serif;
-  font-size: 1rem;
+  font-size: 0.92rem;
 }
 
 .invite-button:hover {
@@ -209,7 +211,7 @@ const copyText = async (value: string, label: string) => {
 .invite-warning {
   margin: 0;
   text-align: center;
-  font-size: 0.92rem;
+  font-size: 0.86rem;
 }
 
 .invite-feedback {
@@ -237,15 +239,15 @@ const copyText = async (value: string, label: string) => {
   border-color: rgba(169, 125, 68, 0.82);
   color: #f2ddbc;
   border-radius: 12px;
-  padding: 0.85rem 1rem;
+  padding: 0.62rem 0.8rem;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.38);
 }
 
 .invite-card--claims {
-  padding: 1rem 1rem 0.85rem;
+  padding: 0.7rem 0.75rem 0.6rem;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 0.85rem;
+  gap: 0.55rem;
 }
 
 .claims-card__header {
@@ -253,28 +255,28 @@ const copyText = async (value: string, label: string) => {
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding: 0.45rem 0.55rem 0.85rem;
+  padding: 0.15rem 0.2rem 0.5rem;
   border-bottom: 1px solid rgba(176, 131, 70, 0.5);
 }
 
 .claims-card__header strong {
   color: #f2dfb6;
   font-family: Cambria, "Palatino Linotype", Georgia, serif;
-  font-size: 1.12rem;
+  font-size: 0.98rem;
 }
 
 .claims-card__header span {
   color: #ecd6a5;
   font-family: Cambria, "Palatino Linotype", Georgia, serif;
-  font-size: 1.05rem;
+  font-size: 0.9rem;
 }
 
 .claims-list {
   list-style: none;
   margin: 0;
-  padding: 0 0.15rem 0;
+  padding: 0;
   display: grid;
-  gap: 0;
+  gap: 0.35rem;
   overflow: auto;
   min-height: 0;
 }
@@ -283,44 +285,65 @@ const copyText = async (value: string, label: string) => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 1rem;
-  padding: 0.95rem 0.4rem;
-  border-bottom: 1px solid rgba(143, 105, 58, 0.42);
+  gap: 0.55rem;
+  padding: 0.48rem 0.58rem;
+  border: 1px solid rgba(143, 105, 58, 0.32);
+  background:
+    linear-gradient(180deg, rgba(79, 51, 30, 0.16), rgba(30, 19, 13, 0.2)),
+    rgba(26, 16, 12, 0.24);
+  border-radius: 9px;
 }
 
-.claims-list__identity strong {
-  display: block;
+.claims-list__main {
+  min-width: 0;
+}
+
+.claims-list__identity {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.claims-list__name {
   color: #f4e4c0;
   font-family: Cambria, "Palatino Linotype", Georgia, serif;
-  font-size: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.15;
 }
 
 .claims-list__identity p {
-  margin: 0.28rem 0 0;
+  margin: 0;
   color: #d5bf97;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
 }
 
 .claim-status {
   position: relative;
-  padding: 0.35rem 0.8rem 0.35rem 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  padding: 0.24rem 0.6rem 0.24rem 1.42rem;
   border: 1px solid rgba(144, 168, 112, 0.4);
-  border-radius: 12px;
+  border-radius: 9px;
   background:
     linear-gradient(180deg, rgba(110, 134, 74, 0.35), rgba(44, 61, 31, 0.8)),
     #2d3a21;
   color: #eef0d2;
   font-family: Cambria, "Palatino Linotype", Georgia, serif;
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .claim-status::before {
   content: '';
   position: absolute;
-  left: 0.55rem;
+  left: 0.42rem;
   top: 50%;
-  width: 10px;
-  height: 10px;
-  margin-top: -5px;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
   border-radius: 999px;
   background: radial-gradient(circle, #d8ff9d, #4e7f2a);
   box-shadow: 0 0 8px rgba(170, 215, 101, 0.45);
@@ -355,16 +378,20 @@ const copyText = async (value: string, label: string) => {
 
 @media (max-width: 720px) {
   .invite-card--qr {
-    padding: 1.2rem 1rem 1rem;
+    padding: 0.85rem 0.75rem 0.8rem;
   }
 
   .invite-card__frame {
-    padding: 1.5rem;
+    padding: 0.85rem;
   }
 
   .claims-list__item {
     grid-template-columns: 1fr;
     align-items: flex-start;
+  }
+
+  .claim-status {
+    justify-self: flex-start;
   }
 }
 </style>

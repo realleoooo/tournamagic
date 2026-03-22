@@ -343,6 +343,7 @@ onMounted(async () => {
 .feature-panel {
   position: relative;
   min-height: 0;
+  min-width: 0;
   border: 1px solid #9d6e34;
   background:
     linear-gradient(180deg, rgba(249, 227, 177, 0.96), rgba(222, 189, 132, 0.96)),
@@ -411,11 +412,13 @@ onMounted(async () => {
 .feature-section {
   min-height: 0;
   height: 100%;
+  min-width: 0;
 }
 
 .feature-section {
   padding: 1rem 1.2rem 1.2rem;
   overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .feature-section--overview {

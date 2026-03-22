@@ -23,20 +23,6 @@
           </div>
 
           <div class="topbar__actions">
-            <div class="theme-picker">
-              <span>Theme</span>
-              <div class="theme-swatches" role="group" aria-label="Theme picker">
-                <button
-                  v-for="theme in themeOptions"
-                  :key="theme.value"
-                  type="button"
-                  :class="['theme-swatch', `theme-swatch--${theme.value}`, { 'theme-swatch--active': selectedTheme === theme.value }]"
-                  :aria-label="`Use ${theme.label} theme`"
-                  @click="selectedTheme = theme.value; applyTheme(theme.value)"
-                ></button>
-              </div>
-            </div>
-
             <div v-if="authStore.isAuthenticated" class="auth-status">
               <div class="auth-status__user">
                 <strong>{{ authStore.user?.name }}</strong>
@@ -82,25 +68,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTournamentStore } from '@/stores/tournament'
 import { useTournamentShell } from '@/composables/useTournamentShell'
-
-const THEME_STORAGE_KEY = 'tournamagic.theme'
-
-const themeOptions = [
-  { value: 'green', label: 'Green' },
-  { value: 'red', label: 'Red' },
-  { value: 'blue', label: 'Blue' },
-  { value: 'white', label: 'White' },
-  { value: 'black', label: 'Black' }
-] as const
-
-type ThemeValue = (typeof themeOptions)[number]['value']
-
-const selectedTheme = ref<ThemeValue>('green')
 const authStore = useAuthStore()
 const tournamentStore = useTournamentStore()
 const router = useRouter()
@@ -119,11 +91,6 @@ const canStartTournament = computed(
     tournament.value.players.length >= 2 &&
     tournament.value.players.every((player) => player.claimedByEmail)
 )
-
-const applyTheme = (theme: ThemeValue) => {
-  document.documentElement.dataset.theme = theme
-  window.localStorage.setItem(THEME_STORAGE_KEY, theme)
-}
 
 const logout = () => {
   authStore.logout()
@@ -157,10 +124,5 @@ const onLeave = async () => {
 
 onMounted(() => {
   authStore.initialize()
-
-  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY) as ThemeValue | null
-  const isKnownTheme = themeOptions.some((option) => option.value === storedTheme)
-  selectedTheme.value = isKnownTheme && storedTheme ? storedTheme : 'green'
-  applyTheme(selectedTheme.value)
 })
 </script>

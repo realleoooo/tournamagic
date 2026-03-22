@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { Match, Player } from '@/domain/models'
 import MatchTimer from '@/components/matches/MatchTimer.vue'
+import { useTournamentShell } from '@/composables/useTournamentShell'
 
 const props = defineProps<{
   matches: Match[]
@@ -14,8 +15,13 @@ const emit = defineEmits<{
   clear: [matchId: string]
 }>()
 
-const selectedRound = ref(1)
 const resultInputs = ref<Record<string, { winsA: number; winsB: number }>>({})
+const shell = useTournamentShell()
+
+const selectedRound = computed({
+  get: () => shell.state.selectedRound,
+  set: (round: number) => shell.setSelectedRound(round)
+})
 
 const inputFor = (matchId: string) => {
   if (!resultInputs.value[matchId]) {
@@ -83,13 +89,13 @@ watch(
   rounds,
   (nextRounds) => {
     if (nextRounds.length === 0) {
-      selectedRound.value = 1
+      shell.setSelectedRound(1)
       return
     }
 
     const exists = nextRounds.some((round) => round.number === selectedRound.value)
     if (!exists) {
-      selectedRound.value = nextRounds[0].number
+      shell.setSelectedRound(nextRounds[0].number)
     }
   },
   { immediate: true }
@@ -289,6 +295,7 @@ watch(
   gap: 0.9rem;
   overflow: auto;
   min-height: 0;
+  scrollbar-gutter: stable;
   padding-right: 0.2rem;
 }
 

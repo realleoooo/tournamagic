@@ -62,6 +62,7 @@ const iconClasses = ['leader-icon--bone', 'leader-icon--leaf', 'leader-icon--sun
 .leaderboard-table-wrap {
   min-height: 0;
   overflow: auto;
+  scrollbar-gutter: stable;
   border: 1px solid #855821;
   background:
     linear-gradient(180deg, rgba(44, 28, 18, 0.92), rgba(27, 18, 12, 0.96)),
