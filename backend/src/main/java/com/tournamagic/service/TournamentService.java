@@ -286,35 +286,81 @@ public class TournamentService {
     public List<StandingDto> standings(String tournamentId) {
         List<PlayerEntity> players = playerRepository.findByTournamentId(tournamentId);
         List<MatchEntity> matches = matchRepository.findByTournamentId(tournamentId);
+        return buildStandings(players, matches);
+    }
 
-        Map<String, StandingDtoBuilder> rows = new HashMap<>();
-        players.forEach(p -> rows.put(p.getId(), new StandingDtoBuilder(p.getId(), p.getName())));
+    public PlayerProfileDto getPlayerProfile(String rawEmail, AuthenticatedUser currentUser) {
+        String normalizedEmail = normalizeEmail(rawEmail);
+        boolean currentUserProfile = currentUser.email().equalsIgnoreCase(normalizedEmail);
+        List<TournamentParticipantEntity> targetParticipants = tournamentParticipantRepository.findByUserEmailOrderByJoinedAtDesc(normalizedEmail);
 
-        for (MatchEntity match : matches) {
-            if (!"completed".equals(match.getStatus()) || match.getWinnerId() == null) continue;
-            StandingDtoBuilder a = rows.get(match.getPlayerAId());
-            StandingDtoBuilder b = rows.get(match.getPlayerBId());
-            a.gameWins += match.getWinsA();
-            a.gameLosses += match.getWinsB();
-            b.gameWins += match.getWinsB();
-            b.gameLosses += match.getWinsA();
-            if (match.getWinnerId().equals(match.getPlayerAId())) {
-                a.matchWins++;
-                b.matchLosses++;
-            } else {
-                b.matchWins++;
-                a.matchLosses++;
+        if (targetParticipants.isEmpty() && !currentUserProfile) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Player profile not found.");
+        }
+
+        if (!currentUserProfile) {
+            Set<String> currentTournamentIds = tournamentParticipantRepository.findByUserEmailOrderByJoinedAtDesc(currentUser.email()).stream()
+                    .map(TournamentParticipantEntity::getTournamentId)
+                    .collect(Collectors.toSet());
+            boolean sharedTournament = targetParticipants.stream()
+                    .map(TournamentParticipantEntity::getTournamentId)
+                    .anyMatch(currentTournamentIds::contains);
+
+            if (!sharedTournament) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only view profiles for players who shared a tournament with you.");
             }
         }
 
-        List<StandingDto> standings = rows.values().stream().map(StandingDtoBuilder::build).collect(Collectors.toList());
-        standings.sort((a, b) -> {
-            if (b.matchWins() != a.matchWins()) return Integer.compare(b.matchWins(), a.matchWins());
-            if (b.gameDiff() != a.gameDiff()) return Integer.compare(b.gameDiff(), a.gameDiff());
-            if (b.gameWins() != a.gameWins()) return Integer.compare(b.gameWins(), a.gameWins());
-            return a.playerName().compareToIgnoreCase(b.playerName());
-        });
-        return standings;
+        List<PlayerProfileTournamentDto> history = targetParticipants.stream()
+                .map(participant -> toPlayerProfileTournamentDto(participant))
+                .filter(Objects::nonNull)
+                .toList();
+
+        String profileName = history.isEmpty()
+                ? currentUser.name().trim()
+                : targetParticipants.getFirst().getUserName();
+
+        int completedTournaments = 0;
+        int totalMatchWins = 0;
+        int totalMatchLosses = 0;
+        int totalGameWins = 0;
+        int totalGameLosses = 0;
+        int firstPlaces = 0;
+        int secondPlaces = 0;
+        int thirdPlaces = 0;
+
+        for (PlayerProfileTournamentDto tournament : history) {
+            if (COMPLETE_STATUS.equals(tournament.status())) {
+                completedTournaments++;
+                if (Integer.valueOf(1).equals(tournament.placement())) {
+                    firstPlaces++;
+                } else if (Integer.valueOf(2).equals(tournament.placement())) {
+                    secondPlaces++;
+                } else if (Integer.valueOf(3).equals(tournament.placement())) {
+                    thirdPlaces++;
+                }
+            }
+
+            totalMatchWins += tournament.matchWins();
+            totalMatchLosses += tournament.matchLosses();
+            totalGameWins += tournament.gameWins();
+            totalGameLosses += tournament.gameLosses();
+        }
+
+        PlayerProfileStatsDto stats = new PlayerProfileStatsDto(
+                history.size(),
+                completedTournaments,
+                history.size() - completedTournaments,
+                totalMatchWins,
+                totalMatchLosses,
+                totalGameWins,
+                totalGameLosses,
+                firstPlaces,
+                secondPlaces,
+                thirdPlaces
+        );
+
+        return new PlayerProfileDto(profileName, normalizedEmail, currentUserProfile, stats, history);
     }
 
     private void claimPlayerForUser(TournamentEntity tournament, List<PlayerEntity> players, AuthenticatedUser currentUser, String creatorPlayerName) {
@@ -390,6 +436,10 @@ public class TournamentService {
         return code == null ? "" : code.trim().toUpperCase(Locale.ROOT);
     }
 
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    }
+
     private List<MatchEntity> createRoundRobinMatches(String tournamentId, List<PlayerEntity> players) {
         List<MatchEntity> matches = new ArrayList<>();
         for (int i = 0; i < players.size(); i++) {
@@ -457,6 +507,83 @@ public class TournamentService {
                 participantDtos,
                 currentUserJoined
         );
+    }
+
+    private PlayerProfileTournamentDto toPlayerProfileTournamentDto(TournamentParticipantEntity participant) {
+        TournamentEntity tournament = tournamentRepository.findById(participant.getTournamentId()).orElse(null);
+        if (tournament == null) {
+            return null;
+        }
+
+        List<PlayerEntity> players = playerRepository.findByTournamentId(tournament.getId());
+        List<MatchEntity> matches = matchRepository.findByTournamentId(tournament.getId());
+        List<StandingDto> standings = buildStandings(players, matches);
+
+        StandingDto playerStanding = standings.stream()
+                .filter(standing -> standing.playerId().equals(participant.getPlayerId()))
+                .findFirst()
+                .orElse(new StandingDto(participant.getPlayerId(), participant.getUserName(), 0, 0, 0, 0, 0, 0, 0));
+
+        Integer placement = COMPLETE_STATUS.equals(tournament.getStatus())
+                ? standings.stream()
+                        .map(StandingDto::playerId)
+                        .toList()
+                        .indexOf(participant.getPlayerId()) + 1
+                : null;
+
+        int completedMatches = (int) matches.stream().filter(match -> "completed".equals(match.getStatus())).count();
+
+        return new PlayerProfileTournamentDto(
+                tournament.getId(),
+                tournament.getName(),
+                tournament.getCreatedAt(),
+                tournament.getStatus(),
+                participant.getPlayerId(),
+                playerStanding.playerName(),
+                participant.getJoinedAt(),
+                players.size(),
+                completedMatches,
+                matches.size(),
+                playerStanding.matchWins(),
+                playerStanding.matchLosses(),
+                playerStanding.gameWins(),
+                playerStanding.gameLosses(),
+                placement
+        );
+    }
+
+    private List<StandingDto> buildStandings(List<PlayerEntity> players, List<MatchEntity> matches) {
+        Map<String, StandingDtoBuilder> rows = new HashMap<>();
+        players.forEach(player -> rows.put(player.getId(), new StandingDtoBuilder(player.getId(), player.getName())));
+
+        for (MatchEntity match : matches) {
+            if (!"completed".equals(match.getStatus()) || match.getWinnerId() == null) continue;
+            StandingDtoBuilder a = rows.get(match.getPlayerAId());
+            StandingDtoBuilder b = rows.get(match.getPlayerBId());
+            if (a == null || b == null) {
+                continue;
+            }
+            a.gameWins += match.getWinsA();
+            a.gameLosses += match.getWinsB();
+            b.gameWins += match.getWinsB();
+            b.gameLosses += match.getWinsA();
+            if (match.getWinnerId().equals(match.getPlayerAId())) {
+                a.matchWins++;
+                b.matchLosses++;
+            } else {
+                b.matchWins++;
+                a.matchLosses++;
+            }
+        }
+
+        List<StandingDto> standings = rows.values().stream().map(StandingDtoBuilder::build).collect(Collectors.toList());
+        standings.sort((a, b) -> {
+            if (b.matchWins() != a.matchWins()) return Integer.compare(b.matchWins(), a.matchWins());
+            if (b.gameDiff() != a.gameDiff()) return Integer.compare(b.gameDiff(), a.gameDiff());
+            if (b.gameWins() != a.gameWins()) return Integer.compare(b.gameWins(), a.gameWins());
+            return a.playerName().compareToIgnoreCase(b.playerName());
+        });
+        return standings;
     }
 
     private static class StandingDtoBuilder {

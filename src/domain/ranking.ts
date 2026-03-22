@@ -17,6 +17,8 @@ export const buildStandings = (players: Player[], matches: Match[]): StandingRow
     rows.set(player.id, {
       playerId: player.id,
       playerName: player.name,
+      claimedByEmail: player.claimedByEmail,
+      claimedByName: player.claimedByName,
       matchWins: 0,
       matchLosses: 0,
       gameWins: 0,

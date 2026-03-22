@@ -1,11 +1,28 @@
 <script setup lang="ts">
 import type { StandingRow } from '@/domain/models'
+import { useRouter } from 'vue-router'
 
-defineProps<{
+const props = defineProps<{
   standings: StandingRow[]
+  resolveProfileEmail: (playerId: string) => string | null | undefined
 }>()
 
 const iconClasses = ['leader-icon--bone', 'leader-icon--leaf', 'leader-icon--sun', 'leader-icon--ember', 'leader-icon--water']
+const router = useRouter()
+
+const profileEmailFor = (playerId: string) => props.resolveProfileEmail(playerId)
+
+const goToProfile = (playerId: string) => {
+  const email = profileEmailFor(playerId)
+  if (!email) {
+    return
+  }
+
+  router.push({
+    name: 'player-profile',
+    params: { email }
+  })
+}
 </script>
 
 <template>
@@ -25,7 +42,21 @@ const iconClasses = ['leader-icon--bone', 'leader-icon--leaf', 'leader-icon--sun
           <tr v-for="(row, index) in standings" :key="row.playerId" :class="{ 'leaderboard-table__row--lead': index === 0 }">
             <td class="leaderboard-rank">{{ index + 1 }}</td>
             <td>
-              <div class="leaderboard-player">
+              <button
+                v-if="profileEmailFor(row.playerId)"
+                type="button"
+                class="leaderboard-player leaderboard-player--button"
+                @click="goToProfile(row.playerId)"
+              >
+                <div :class="['leader-icon', iconClasses[index % iconClasses.length]]">
+                  <span>{{ row.playerName.slice(0, 1).toUpperCase() }}</span>
+                </div>
+                <div class="leaderboard-player__copy">
+                  <strong>{{ row.playerName }}</strong>
+                  <span>{{ row.matchWins + row.matchLosses }} matches played</span>
+                </div>
+              </button>
+              <div v-else class="leaderboard-player">
                 <div :class="['leader-icon', iconClasses[index % iconClasses.length]]">
                   <span>{{ row.playerName.slice(0, 1).toUpperCase() }}</span>
                 </div>
@@ -131,6 +162,26 @@ const iconClasses = ['leader-icon--bone', 'leader-icon--leaf', 'leader-icon--sun
   min-width: 0;
 }
 
+.leaderboard-player--button {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  box-shadow: none;
+}
+
+.leaderboard-player--button:hover {
+  background: transparent;
+}
+
+.leaderboard-player--button:focus-visible .leaderboard-player__copy strong {
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 231, 173, 0.9);
+  text-underline-offset: 0.18em;
+}
+
 .leaderboard-player__copy {
   display: grid;
   gap: 0.15rem;
@@ -139,6 +190,14 @@ const iconClasses = ['leader-icon--bone', 'leader-icon--leaf', 'leader-icon--sun
 .leaderboard-player strong {
   color: inherit;
   font-size: 1.05rem;
+}
+
+.leaderboard-player--button .leaderboard-player__copy strong {
+  transition: color 140ms ease;
+}
+
+.leaderboard-player--button:hover .leaderboard-player__copy strong {
+  color: #fff4d3;
 }
 
 .leaderboard-player span {

@@ -29,10 +29,10 @@
 
           <div class="topbar__actions">
             <div v-if="authStore.isAuthenticated" class="auth-status">
-              <div class="auth-status__user">
+              <button type="button" class="auth-status__user auth-status__user--link" @click="goToOwnProfile">
                 <strong>{{ authStore.user?.name }}</strong>
                 <span>{{ authStore.user?.email }}</span>
-              </div>
+              </button>
               <button type="button" class="secondary" @click="logout">Log out</button>
             </div>
           </div>
@@ -70,9 +70,15 @@ const shell = useTournamentShell()
 const isTournamentRoute = computed(() => route.name === 'tournament')
 const isSetupRoute = computed(() => route.name === 'setup')
 const isJoinRoute = computed(() => route.name === 'join-tournament')
+const isProfileRoute = computed(() => route.name === 'player-profile')
 const isAuthRoute = computed(() => route.name === 'login' || route.name === 'register')
 const isFantasyRoute = computed(
-  () => isTournamentRoute.value || isSetupRoute.value || isJoinRoute.value || isAuthRoute.value
+  () =>
+    isTournamentRoute.value ||
+    isSetupRoute.value ||
+    isJoinRoute.value ||
+    isProfileRoute.value ||
+    isAuthRoute.value
 )
 
 const logout = () => {
@@ -84,6 +90,17 @@ const goOverview = () => {
   shell.closeSidebar()
   tournamentStore.leaveTournament()
   router.replace('/')
+}
+
+const goToOwnProfile = () => {
+  if (!authStore.user?.email) {
+    return
+  }
+
+  router.push({
+    name: 'player-profile',
+    params: { email: authStore.user.email }
+  })
 }
 
 onMounted(() => {

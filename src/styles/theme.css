@@ -212,6 +212,25 @@ button.brand-link:focus-visible {
   gap: 0.1rem;
 }
 
+.auth-status__user--link {
+  padding: 0.2rem 0.3rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  box-shadow: none;
+}
+
+.auth-status__user--link:hover {
+  background: transparent;
+}
+
+.auth-status__user--link:focus-visible strong,
+.auth-status__user--link:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 .auth-status__user strong,
 .auth-status__user span {
   line-height: 1.05;

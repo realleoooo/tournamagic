@@ -1,4 +1,4 @@
-import type { JoinTournamentPreview, Tournament } from '@/domain/models'
+import type { JoinTournamentPreview, PlayerProfile, Tournament } from '@/domain/models'
 import { getAuthHeaders } from '@/api/authSession'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
@@ -83,6 +83,9 @@ export const tournamentApi = {
   },
   async fetchTournament(id: string): Promise<Tournament> {
     return request<Tournament>(`/tournaments/${id}`)
+  },
+  async fetchPlayerProfile(email: string): Promise<PlayerProfile> {
+    return request<PlayerProfile>(`/players/${encodeURIComponent(email)}/profile`)
   },
   async startTournament(tournamentId: string): Promise<Tournament> {
     return request<Tournament>(`/tournaments/${tournamentId}/start`, {

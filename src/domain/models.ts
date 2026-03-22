@@ -52,6 +52,8 @@ export interface JoinTournamentPreview {
 export interface StandingRow {
   playerId: string
   playerName: string
+  claimedByEmail?: string | null
+  claimedByName?: string | null
   matchWins: number
   matchLosses: number
   gameWins: number
@@ -59,4 +61,43 @@ export interface StandingRow {
   gameDiff: number
   matchWinPct: number
   gameWinPct: number
+}
+
+export interface PlayerProfileStats {
+  tournamentsPlayed: number
+  completedTournaments: number
+  inProgressTournaments: number
+  totalMatchWins: number
+  totalMatchLosses: number
+  totalGameWins: number
+  totalGameLosses: number
+  firstPlaces: number
+  secondPlaces: number
+  thirdPlaces: number
+}
+
+export interface PlayerProfileTournament {
+  tournamentId: string
+  tournamentName: string
+  createdAt: string
+  status: Tournament['status']
+  playerId: string
+  playerName: string
+  joinedAt: string
+  playerCount: number
+  completedMatches: number
+  totalMatches: number
+  matchWins: number
+  matchLosses: number
+  gameWins: number
+  gameLosses: number
+  placement?: number | null
+}
+
+export interface PlayerProfile {
+  name: string
+  email: string
+  currentUser: boolean
+  stats: PlayerProfileStats
+  tournaments: PlayerProfileTournament[]
 }
