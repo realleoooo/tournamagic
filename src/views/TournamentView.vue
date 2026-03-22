@@ -316,39 +316,12 @@ onMounted(async () => {
 .sidebar__link--active {
   color: #fff0c7;
   border-color: #ba8d4c;
-}
-
-.tournament-shell--overview .sidebar__link--active {
-  background:
-    linear-gradient(180deg, rgba(44, 105, 147, 0.38), rgba(19, 38, 52, 0.94)),
-    #18232d;
-  box-shadow:
-    inset 0 1px 0 rgba(203, 235, 255, 0.18),
-    0 0 16px rgba(71, 151, 209, 0.16);
-}
-
-.tournament-shell--leaderboard .sidebar__link--active {
-  background:
-    linear-gradient(180deg, rgba(44, 105, 147, 0.38), rgba(19, 38, 52, 0.94)),
-    #18232d;
-  box-shadow:
-    inset 0 1px 0 rgba(203, 235, 255, 0.18),
-    0 0 16px rgba(71, 151, 209, 0.16);
-}
-
-.tournament-shell--opponents .sidebar__link--active {
-  background:
-    linear-gradient(180deg, rgba(140, 63, 30, 0.48), rgba(69, 25, 18, 0.94)),
-    #2b1510;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 197, 170, 0.16),
-    0 0 16px rgba(217, 93, 49, 0.18);
-}
-
-.tournament-shell--invite .sidebar__link--active {
   background:
     linear-gradient(180deg, rgba(161, 125, 54, 0.28), rgba(59, 39, 22, 0.94)),
     #1f1711;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 225, 164, 0.16),
+    0 0 16px rgba(209, 167, 71, 0.16);
 }
 
 .sidebar__header strong {
