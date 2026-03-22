@@ -83,30 +83,31 @@ const create = () => {
 <style scoped>
 .roster-panel {
   position: relative;
-  min-height: 640px;
+  min-height: 0;
   background:
-    linear-gradient(180deg, rgba(91, 56, 34, 0.24), rgba(34, 20, 14, 0.14)),
+    linear-gradient(180deg, rgba(95, 60, 38, 0.28), rgba(37, 23, 16, 0.16)),
     rgba(67, 40, 26, 0.24);
-  border: 1px solid #8c5d2b;
+  border: 1px solid rgba(172, 120, 57, 0.7);
+  border-radius: 24px;
   box-shadow:
-    inset 0 0 0 1px rgba(236, 190, 105, 0.16),
-    0 18px 28px rgba(0, 0, 0, 0.24);
-  padding: 1.55rem 1.35rem 1.35rem;
+    inset 0 0 0 1px rgba(236, 190, 105, 0.11),
+    0 18px 28px rgba(0, 0, 0, 0.2);
+  padding: 1.55rem 1.45rem 1.35rem;
 }
 
 .roster-panel__header h2 {
   margin: 0;
   color: #f4dfb3;
   font-family: Cambria, "Palatino Linotype", Georgia, serif;
-  font-size: 2rem;
+  font-size: 1.85rem;
 }
 
 .roster-panel__header p {
-  margin: 0.8rem 0 0;
+  margin: 0.7rem 0 0;
   color: #e4cda3;
   font-family: Cambria, "Palatino Linotype", Georgia, serif;
   font-size: 0.98rem;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 .roster-form {
@@ -181,8 +182,8 @@ const create = () => {
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid rgba(137, 99, 55, 0.38);
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(137, 99, 55, 0.34);
   color: #edd7af;
   font-family: Cambria, "Palatino Linotype", Georgia, serif;
 }
@@ -219,12 +220,6 @@ const create = () => {
   background:
     linear-gradient(180deg, rgba(138, 184, 82, 0.96), rgba(67, 108, 43, 0.98)),
     #699c49;
-}
-
-@media (max-width: 1080px) {
-  .roster-panel {
-    min-height: 0;
-  }
 }
 
 @media (max-width: 720px) {

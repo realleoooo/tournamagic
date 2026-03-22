@@ -16,10 +16,15 @@
               <span></span>
             </button>
 
-            <div>
+            <button
+              type="button"
+              class="brand-link"
+              :aria-label="isTournamentRoute ? 'Back to overview' : 'Go to overview'"
+              @click="goOverview"
+            >
               <h1>TournaMagic</h1>
               <p>Draft tournament tracker</p>
-            </div>
+            </button>
           </div>
 
           <div class="topbar__actions">
@@ -30,23 +35,6 @@
               </div>
               <button type="button" class="secondary" @click="logout">Log out</button>
             </div>
-          </div>
-        </div>
-
-        <div v-if="showTournamentHeader" class="topbar__row topbar__row--tournament">
-          <div class="tournament-summary">
-            <strong>{{ tournament?.name }}</strong>
-            <span>{{ tournament?.players.length }} players</span>
-            <span>{{ tournament?.status }}</span>
-          </div>
-
-          <div class="tournament-actions">
-            <button type="button" class="secondary" @click="goOverview">Back to overview</button>
-            <button type="button" class="warn" @click="onReset">Reset tournament</button>
-            <button v-if="canStartTournament" type="button" @click="onStart">Start tournament</button>
-            <button v-if="tournament?.currentUserJoined" type="button" class="secondary" @click="onLeave">
-              Leave tournament
-            </button>
           </div>
         </div>
       </div>
@@ -79,18 +67,10 @@ const router = useRouter()
 const route = useRoute()
 const shell = useTournamentShell()
 
-const tournament = computed(() => tournamentStore.tournament)
 const isTournamentRoute = computed(() => route.name === 'tournament')
 const isSetupRoute = computed(() => route.name === 'setup')
 const isAuthRoute = computed(() => route.name === 'login' || route.name === 'register')
 const isFantasyRoute = computed(() => isTournamentRoute.value || isSetupRoute.value || isAuthRoute.value)
-const showTournamentHeader = computed(() => isTournamentRoute.value && Boolean(tournament.value))
-const canStartTournament = computed(
-  () =>
-    tournament.value?.status === 'setup' &&
-    tournament.value.players.length >= 2 &&
-    tournament.value.players.every((player) => player.claimedByEmail)
-)
 
 const logout = () => {
   authStore.logout()
@@ -101,25 +81,6 @@ const goOverview = () => {
   shell.closeSidebar()
   tournamentStore.leaveTournament()
   router.replace('/')
-}
-
-const onReset = async () => {
-  await tournamentStore.resetTournament()
-  shell.closeSidebar()
-  router.replace('/')
-}
-
-const onStart = async () => {
-  await tournamentStore.startTournament()
-}
-
-const onLeave = async () => {
-  const updated = await tournamentStore.leaveJoinedTournament()
-  if (updated) {
-    tournamentStore.leaveTournament()
-    shell.closeSidebar()
-    router.replace('/')
-  }
 }
 
 onMounted(() => {

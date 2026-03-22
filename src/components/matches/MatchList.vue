@@ -214,7 +214,6 @@ watch(
   color: #f5dfb6;
   font-family: Cambria, "Palatino Linotype", Georgia, serif;
   font-size: 1rem;
-  text-transform: uppercase;
 }
 
 .matches-panel__copy p,

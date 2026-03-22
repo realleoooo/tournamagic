@@ -102,6 +102,28 @@ textarea {
   gap: 0.9rem;
 }
 
+button.brand-link {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-weight: inherit;
+  box-shadow: none;
+}
+
+button.brand-link:hover {
+  background: transparent;
+}
+
+button.brand-link:focus-visible {
+  outline: 2px solid rgba(228, 181, 95, 0.76);
+  outline-offset: 6px;
+  border-radius: 10px;
+}
+
 .topbar__row--auth .brand-block {
   justify-self: center;
   position: relative;
@@ -309,6 +331,14 @@ button.warn {
   background:
     linear-gradient(180deg, rgba(165, 74, 61, 0.94), rgba(99, 40, 34, 0.98)),
     #7a332c;
+}
+
+.topbar--invite button.brand-link,
+.topbar--invite button.brand-link:hover {
+  background: transparent;
+  border-color: transparent;
+  color: inherit;
+  box-shadow: none;
 }
 
 button:disabled {

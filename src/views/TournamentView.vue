@@ -31,22 +31,16 @@ const activeSectionLabel = computed(
 
 const activeSectionDescription = computed(() => {
   if (!tournament.value) return ''
-
-  const playerCount = `${tournament.value.players.length} players active`
-
-  switch (shell.state.activeSection) {
-    case 'overview':
-      return `${playerCount} in this tournament`
-    case 'leaderboard':
-      return 'Standings update automatically as results are entered.'
-    case 'opponents':
-      return `${playerCount} stay grouped by player so everyone can see who is left to play.`
-    case 'invite':
-      return `${playerCount} in this tournament`
-    default:
-      return `${playerCount} in this tournament`
-  }
+  const playerCount = tournament.value.players.length
+  return `${playerCount} ${playerCount === 1 ? 'player' : 'players'} active in this tournament`
 })
+
+const canStartTournament = computed(
+  () =>
+    tournament.value?.status === 'setup' &&
+    tournament.value.players.length >= 2 &&
+    tournament.value.players.every((player) => player.claimedByEmail)
+)
 
 const remainingOpponentGroups = computed(() =>
   tournament.value
@@ -58,6 +52,25 @@ const remainingOpponentGroups = computed(() =>
       }))
     : []
 )
+
+const onReset = async () => {
+  await store.resetTournament()
+  shell.closeSidebar()
+  router.replace('/')
+}
+
+const onStart = async () => {
+  await store.startTournament()
+}
+
+const onLeave = async () => {
+  const updated = await store.leaveJoinedTournament()
+  if (updated) {
+    store.leaveTournament()
+    shell.closeSidebar()
+    router.replace('/')
+  }
+}
 
 onMounted(async () => {
   shell.setActiveSection('overview')
@@ -103,12 +116,25 @@ onMounted(async () => {
 
     <section class="feature-panel">
       <header :class="['feature-panel__header', `feature-panel__header--${shell.state.activeSection}`]">
-        <div>
+        <div class="feature-panel__header-copy">
           <strong>{{ activeSectionLabel }}</strong>
           <p v-if="tournament">{{ activeSectionDescription }}</p>
         </div>
-        <p v-if="store.error" class="feature-panel__error">API error: {{ store.error }}</p>
+
+        <div v-if="tournament" class="feature-panel__header-side">
+          <strong class="feature-panel__tournament-name">{{ tournament.name }}</strong>
+
+          <div class="feature-panel__actions">
+            <button v-if="canStartTournament" type="button" @click="onStart">Start tournament</button>
+            <button type="button" class="warn" @click="onReset">Reset tournament</button>
+            <button v-if="tournament.currentUserJoined" type="button" class="secondary" @click="onLeave">
+              Leave tournament
+            </button>
+          </div>
+        </div>
       </header>
+
+      <p v-if="store.error" class="feature-panel__error">API error: {{ store.error }}</p>
 
       <div v-if="store.loading" class="feature-panel__loading">Loading…</div>
 
@@ -367,6 +393,18 @@ onMounted(async () => {
     linear-gradient(180deg, rgba(255, 245, 213, 0.4), rgba(233, 196, 137, 0.18));
 }
 
+.feature-panel__header-copy {
+  min-width: 0;
+}
+
+.feature-panel__header-side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
 .feature-panel__header p,
 .feature-panel__loading,
 .overview-summary p,
@@ -380,7 +418,30 @@ onMounted(async () => {
 
 .feature-panel__error {
   margin: 0;
+  padding: 0.85rem 1.55rem 0;
   color: var(--danger);
+}
+
+.feature-panel__tournament-name {
+  color: #3d2206;
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+  font-size: 1.1rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feature-panel__actions {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.feature-panel__actions button {
+  font-family: Cambria, "Palatino Linotype", Georgia, serif;
+  white-space: nowrap;
 }
 
 .feature-panel__loading {
@@ -398,10 +459,6 @@ onMounted(async () => {
   color: #3c2711;
   font-family: Cambria, "Palatino Linotype", Georgia, serif;
   font-size: 0.95rem;
-}
-
-.feature-panel__header--overview strong {
-  text-transform: uppercase;
 }
 
 .feature-panel__header--opponents strong {
@@ -471,7 +528,6 @@ onMounted(async () => {
   color: #d7f18e;
   font-family: Cambria, "Palatino Linotype", Georgia, serif;
   font-size: 1.3rem;
-  text-transform: uppercase;
 }
 
 .overview-summary p,
@@ -628,6 +684,21 @@ onMounted(async () => {
 
   .sidebar__close {
     display: inline-flex;
+  }
+
+  .feature-panel__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .feature-panel__header-side {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .feature-panel__actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .overview-top {
