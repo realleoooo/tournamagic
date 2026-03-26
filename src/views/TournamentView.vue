@@ -6,17 +6,25 @@ import TournamentFeatureHeader from '@/components/tournaments/TournamentFeatureH
 import TournamentLeaderboardSection from '@/components/tournaments/TournamentLeaderboardSection.vue'
 import TournamentOpponentsSection from '@/components/tournaments/TournamentOpponentsSection.vue'
 import TournamentOverviewSection from '@/components/tournaments/TournamentOverviewSection.vue'
+import TournamentOverviewSkeleton from '@/components/tournaments/TournamentOverviewSkeleton.vue'
 import TournamentSidebar from '@/components/tournaments/TournamentSidebar.vue'
 import { buildRemainingOpponentGroups } from '@/components/tournaments/remainingOpponents'
 import { tournamentSections } from '@/components/tournaments/tournamentSections'
 import { useTournamentShell } from '@/composables/useTournamentShell'
+import { validateBestOfThree } from '@/domain/scoring'
+import { useToastStore } from '@/stores/toast'
 import { useTournamentStore } from '@/stores/tournament'
 
 const store = useTournamentStore()
+const toastStore = useToastStore()
 const router = useRouter()
 const shell = useTournamentShell()
 
 const tournament = computed(() => store.tournament)
+const showOverviewSkeleton = computed(
+  () => store.loading && shell.state.activeSection === 'overview' && !tournament.value
+)
+const showFallbackLoading = computed(() => store.loading && !tournament.value && !showOverviewSkeleton.value)
 
 const activeSectionLabel = computed(
   () => tournamentSections.find((section) => section.id === shell.state.activeSection)?.label ?? 'Tournament'
@@ -58,13 +66,41 @@ const openPlayerProfile = (playerId: string) => {
 }
 
 const onReset = async () => {
-  await store.resetTournament()
+  const tournamentName = tournament.value?.name
+  const deleted = await store.resetTournament()
+  if (deleted) {
+    if (tournamentName) {
+      toastStore.success(`Deleted tournament ${tournamentName}`)
+    }
+    shell.closeSidebar()
+    router.replace('/')
+    return
+  }
+
+  if (store.error) {
+    toastStore.error(store.error)
+  }
+
   shell.closeSidebar()
   router.replace('/')
 }
 
 const onStart = async () => {
   await store.startTournament()
+}
+
+const onSubmit = async (matchId: string, winsA: number, winsB: number) => {
+  const validation = validateBestOfThree(winsA, winsB)
+  if (!validation.ok) {
+    toastStore.error(validation.message ?? 'Invalid match result.')
+    return
+  }
+
+  await store.submitResult(matchId, winsA, winsB)
+
+  if (store.error) {
+    toastStore.error(store.error)
+  }
 }
 
 const onLeave = async () => {
@@ -114,9 +150,11 @@ onMounted(async () => {
 
       <p v-if="store.error" class="feature-panel__error">API error: {{ store.error }}</p>
 
-      <div v-if="store.loading" class="feature-panel__loading">Loading...</div>
+      <TournamentOverviewSkeleton v-if="showOverviewSkeleton" />
 
-      <div v-else-if="tournament" class="feature-panel__body">
+      <div v-else-if="showFallbackLoading" class="feature-panel__loading">Loading...</div>
+
+      <div v-if="tournament" class="feature-panel__body">
         <TournamentOverviewSection
           v-show="shell.state.activeSection === 'overview'"
           :tournament="tournament"
@@ -124,7 +162,8 @@ onMounted(async () => {
           :total-matches="store.completion.total"
           :resolve-name="store.resolveName"
           :resolve-profile-email="profileEmailForPlayer"
-          @submit="store.submitResult"
+          :loading="store.loading"
+          @submit="onSubmit"
           @clear="store.clearResult"
         />
 

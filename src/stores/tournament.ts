@@ -52,6 +52,20 @@ export const useTournamentStore = defineStore('tournament', () => {
     }
   }
 
+  const withLoadingAction = async (fn: () => Promise<void>): Promise<boolean> => {
+    loading.value = true
+    error.value = undefined
+    try {
+      await fn()
+      return true
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Unknown error'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   const refreshTournamentList = async () => {
     const list = await withLoading(() => tournamentApi.listTournaments())
     if (list) {
@@ -158,17 +172,27 @@ export const useTournamentStore = defineStore('tournament', () => {
   const resetTournament = async () => {
     if (!tournament.value) return
     const id = tournament.value.id
-    await withLoading(() => tournamentApi.deleteTournament(id))
+    const deleted = await withLoadingAction(() => tournamentApi.deleteTournament(id))
+    if (!deleted) {
+      return false
+    }
+
     tournament.value = undefined
     await refreshTournamentList()
+    return true
   }
 
   const deleteFromList = async (id: string) => {
-    await withLoading(() => tournamentApi.deleteTournament(id))
+    const deleted = await withLoadingAction(() => tournamentApi.deleteTournament(id))
+    if (!deleted) {
+      return false
+    }
+
     if (tournament.value?.id === id) {
       tournament.value = undefined
     }
     await refreshTournamentList()
+    return true
   }
 
   const resolveName = (playerId: string) =>

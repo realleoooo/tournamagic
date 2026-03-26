@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: Aptos, Bahnschrift, "Helvetica Neue", sans-serif;
+
+  --color-background: var(--bg-main);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-muted: var(--bg-muted);
+  --color-foreground: var(--text-main);
+  --color-soft: var(--text-soft);
+  --color-primary: var(--accent-arcane);
+  --color-accent: var(--accent-gold);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+
+  --radius-panel: var(--radius);
+}

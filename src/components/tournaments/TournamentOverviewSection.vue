@@ -9,6 +9,7 @@ defineProps<{
   totalMatches: number
   resolveName: (id: string) => string
   resolveProfileEmail: (id: string) => string | null | undefined
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -45,6 +46,7 @@ const forwardSubmit = (matchId: string, winsA: number, winsB: number) => {
       :players="tournament.players"
       :resolve-name="resolveName"
       :resolve-profile-email="resolveProfileEmail"
+      :loading="loading"
       @submit="forwardSubmit"
       @clear="emit('clear', $event)"
     />

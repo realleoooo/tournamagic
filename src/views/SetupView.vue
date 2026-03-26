@@ -6,14 +6,18 @@ import SetupCreateTournamentModal from '@/components/setup/SetupCreateTournament
 import SetupHero from '@/components/setup/SetupHero.vue'
 import SetupStatusMessage from '@/components/setup/SetupStatusMessage.vue'
 import SetupTournamentList from '@/components/setup/SetupTournamentList.vue'
+import SetupTournamentListSkeleton from '@/components/setup/SetupTournamentListSkeleton.vue'
 import { formatTournamentCount } from '@/components/setup/setupViewFormatters'
+import { useToastStore } from '@/stores/toast'
 import { useTournamentStore } from '@/stores/tournament'
 
 const router = useRouter()
 const store = useTournamentStore()
+const toastStore = useToastStore()
 const isCreateModalOpen = ref(false)
 
 const tournamentCountLabel = computed(() => formatTournamentCount(store.tournaments.length))
+const showTournamentListSkeleton = computed(() => store.loading && store.tournaments.length === 0)
 
 const closeCreateModal = () => {
   isCreateModalOpen.value = false
@@ -30,8 +34,14 @@ onMounted(async () => {
 const handleCreate = async (name: string, players: string[], creatorPlayerName: string) => {
   const created = await store.createTournament(name, players, creatorPlayerName)
   if (created) {
+    toastStore.success(`Created tournament ${created.name}`)
     closeCreateModal()
     router.push('/tournament')
+    return
+  }
+
+  if (store.error) {
+    toastStore.error(store.error)
   }
 }
 
@@ -43,7 +53,16 @@ const openTournament = async (id: string) => {
 }
 
 const deleteTournament = async (id: string) => {
-  await store.deleteFromList(id)
+  const targetTournament = store.tournaments.find((tournament) => tournament.id === id)
+  const deleted = await store.deleteFromList(id)
+  if (deleted && targetTournament) {
+    toastStore.success(`Deleted tournament ${targetTournament.name}`)
+    return
+  }
+
+  if (store.error) {
+    toastStore.error(store.error)
+  }
 }
 </script>
 
@@ -63,10 +82,10 @@ const deleteTournament = async (id: string) => {
       @create="openCreateModal"
     >
       <SetupStatusMessage v-if="store.error" tone="error"><strong>Error:</strong> {{ store.error }}</SetupStatusMessage>
-      <SetupStatusMessage v-if="store.loading">Loading...</SetupStatusMessage>
+      <SetupTournamentListSkeleton v-if="showTournamentListSkeleton" />
 
       <SetupTournamentList
-        v-if="!store.loading"
+        v-else
         :tournaments="store.tournaments"
         @open="openTournament"
         @delete="deleteTournament"

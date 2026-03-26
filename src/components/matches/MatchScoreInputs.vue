@@ -18,6 +18,8 @@ const emit = defineEmits<{
         type="number"
         min="0"
         max="2"
+        step="1"
+        inputmode="numeric"
         @input="emit('update:winsA', Number(($event.target as HTMLInputElement).value))"
       />
     </label>
@@ -28,6 +30,8 @@ const emit = defineEmits<{
         type="number"
         min="0"
         max="2"
+        step="1"
+        inputmode="numeric"
         @input="emit('update:winsB', Number(($event.target as HTMLInputElement).value))"
       />
     </label>

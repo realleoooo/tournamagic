@@ -52,12 +52,15 @@
     >
       <RouterView />
     </main>
+
+    <AppToastViewport />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppToastViewport from '@/components/shared/AppToastViewport.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useTournamentStore } from '@/stores/tournament'
 import { useTournamentShell } from '@/composables/useTournamentShell'

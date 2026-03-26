@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Match, Player } from '@/domain/models'
 import MatchRow from '@/components/matches/MatchRow.vue'
+import RoundOverviewSkeleton from '@/components/matches/RoundOverviewSkeleton.vue'
 import RoundSelector from '@/components/matches/RoundSelector.vue'
 import { useTournamentShell } from '@/composables/useTournamentShell'
 import { buildMatchRounds } from '@/utils/matchRounds'
@@ -12,6 +13,7 @@ const props = defineProps<{
   players: Player[]
   resolveName: (id: string) => string
   resolveProfileEmail: (id: string) => string | null | undefined
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -74,7 +76,9 @@ watch(
 </script>
 
 <template>
-  <section class="matches-panel">
+  <RoundOverviewSkeleton v-if="loading" />
+
+  <section v-else class="matches-panel">
     <RoundSelector
       :rounds="rounds"
       :selected-round="selectedRound"
